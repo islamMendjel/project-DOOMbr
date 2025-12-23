@@ -2,48 +2,334 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="refresh" content="0; url=webDOOM/public/index.html">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Redirecting to webDOOM...</title>
+    <meta name="description" content="Play classic DOOM in your browser using WebAssembly. Experience the legendary first-person shooter with no installation required.">
+    <meta name="keywords" content="DOOM, webDOOM, browser game, WebAssembly, retro gaming, FPS">
+    <meta name="author" content="project-DOOMbr">
+    
+    <!-- Open Graph / Social Media Meta Tags -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="webDOOM - Play DOOM in Your Browser">
+    <meta property="og:description" content="Experience the classic DOOM game right in your browser using WebAssembly. No installation required!">
+    <meta property="og:site_name" content="webDOOM">
+    
+    <!-- Twitter Card Meta Tags -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="webDOOM - Play DOOM in Your Browser">
+    <meta name="twitter:description" content="Experience the classic DOOM game right in your browser using WebAssembly.">
+    
+    <title>webDOOM - Play DOOM in Your Browser</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>🎮</text></svg>">
+    
     <style>
-        body {
-            font-family: 'Courier New', monospace;
-            background-color: #000;
-            color: #0f0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
+        * {
             margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Courier New', Courier, monospace;
+            background: linear-gradient(135deg, #1a0000 0%, #330000 50%, #1a0000 100%);
+            color: #ff0000;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            line-height: 1.6;
+        }
+        
+        header {
+            background: rgba(0, 0, 0, 0.8);
+            padding: 2rem 1rem;
             text-align: center;
+            border-bottom: 3px solid #ff0000;
+            box-shadow: 0 4px 20px rgba(255, 0, 0, 0.3);
         }
-        .container {
-            padding: 20px;
-        }
+        
         h1 {
-            font-size: 2em;
-            margin-bottom: 20px;
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            color: #ff0000;
+            text-shadow: 0 0 10px #ff0000, 0 0 20px #ff0000;
+            margin-bottom: 0.5rem;
+            letter-spacing: 2px;
+            animation: pulse 2s infinite;
         }
-        a {
-            color: #0f0;
-            text-decoration: none;
-            border: 2px solid #0f0;
-            padding: 10px 20px;
+        
+        @keyframes pulse {
+            0%, 100% { text-shadow: 0 0 10px #ff0000, 0 0 20px #ff0000; }
+            50% { text-shadow: 0 0 20px #ff0000, 0 0 40px #ff0000, 0 0 60px #ff0000; }
+        }
+        
+        .subtitle {
+            color: #cc0000;
+            font-size: clamp(1rem, 2vw, 1.3rem);
+            margin-top: 0.5rem;
+        }
+        
+        main {
+            flex: 1;
+            max-width: 900px;
+            margin: 2rem auto;
+            padding: 2rem;
+            width: 100%;
+        }
+        
+        .section {
+            background: rgba(0, 0, 0, 0.7);
+            border: 2px solid #ff0000;
+            border-radius: 8px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 0 20px rgba(255, 0, 0, 0.2);
+        }
+        
+        h2 {
+            color: #ff0000;
+            font-size: clamp(1.5rem, 3vw, 2rem);
+            margin-bottom: 1rem;
+            border-bottom: 2px solid #ff0000;
+            padding-bottom: 0.5rem;
+        }
+        
+        h3 {
+            color: #ff6666;
+            font-size: clamp(1.2rem, 2.5vw, 1.5rem);
+            margin: 1.5rem 0 1rem 0;
+        }
+        
+        p, li {
+            color: #cc9999;
+            font-size: clamp(0.9rem, 1.5vw, 1.1rem);
+            margin-bottom: 1rem;
+        }
+        
+        ul {
+            list-style: none;
+            padding-left: 1rem;
+        }
+        
+        ul li:before {
+            content: "▸ ";
+            color: #ff0000;
+            font-weight: bold;
+            margin-right: 0.5rem;
+        }
+        
+        .cta-button {
             display: inline-block;
-            margin-top: 20px;
-            transition: all 0.3s;
-        }
-        a:hover {
-            background-color: #0f0;
+            background: #ff0000;
             color: #000;
+            padding: 1rem 2rem;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+            font-size: clamp(1rem, 2vw, 1.2rem);
+            transition: all 0.3s ease;
+            border: 2px solid #ff0000;
+            margin: 1rem 0.5rem;
+            box-shadow: 0 4px 15px rgba(255, 0, 0, 0.3);
+        }
+        
+        .cta-button:hover {
+            background: transparent;
+            color: #ff0000;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 0, 0, 0.5);
+        }
+        
+        .cta-container {
+            text-align: center;
+            margin: 2rem 0;
+        }
+        
+        .info-box {
+            background: rgba(255, 0, 0, 0.1);
+            border-left: 4px solid #ff0000;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+        
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+        
+        .feature {
+            background: rgba(255, 0, 0, 0.05);
+            border: 1px solid #ff0000;
+            border-radius: 5px;
+            padding: 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .feature:hover {
+            background: rgba(255, 0, 0, 0.1);
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(255, 0, 0, 0.3);
+        }
+        
+        .feature h3 {
+            font-size: 1.2rem;
+            margin: 0.5rem 0;
+        }
+        
+        footer {
+            background: rgba(0, 0, 0, 0.9);
+            color: #cc9999;
+            text-align: center;
+            padding: 1.5rem;
+            border-top: 3px solid #ff0000;
+            margin-top: auto;
+        }
+        
+        footer a {
+            color: #ff0000;
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+        
+        footer a:hover {
+            color: #ff6666;
+            text-decoration: underline;
+        }
+        
+        code {
+            background: rgba(0, 0, 0, 0.5);
+            padding: 0.2rem 0.5rem;
+            border-radius: 3px;
+            color: #ff6666;
+            font-family: 'Courier New', monospace;
+        }
+        
+        @media (max-width: 768px) {
+            main {
+                padding: 1rem;
+            }
+            
+            .section {
+                padding: 1.5rem;
+            }
+            
+            .cta-button {
+                display: block;
+                margin: 1rem 0;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>🎮 Redirecting to webDOOM...</h1>
-        <p>If you are not redirected automatically, click the link below:</p>
-        <a href="webDOOM/public/index.html">Play DOOM Now</a>
-    </div>
+    <header>
+        <h1>🎮 webDOOM</h1>
+        <p class="subtitle">Experience Classic DOOM in Your Browser</p>
+    </header>
+    
+    <main>
+        <section class="section">
+            <h2>🔥 About This Project</h2>
+            <p>
+                Welcome to webDOOM - a project dedicated to bringing the legendary first-person shooter 
+                <strong>DOOM</strong> to your web browser using cutting-edge WebAssembly technology.
+            </p>
+            <div class="info-box">
+                <p>
+                    <strong>Note:</strong> This repository is configured for GitHub Pages deployment. 
+                    The game engine files can be added to the <code>webDOOM/public/</code> directory 
+                    to enable browser-based gameplay.
+                </p>
+            </div>
+        </section>
+        
+        <section class="section">
+            <h2>✨ Key Features</h2>
+            <div class="features">
+                <div class="feature">
+                    <h3>🚀 No Installation</h3>
+                    <p>Play directly in your browser without downloading or installing anything.</p>
+                </div>
+                <div class="feature">
+                    <h3>🎯 WebAssembly Powered</h3>
+                    <p>Leverages WebAssembly for near-native performance in the browser.</p>
+                </div>
+                <div class="feature">
+                    <h3>📁 Custom WAD Support</h3>
+                    <p>Upload your own DOOM .WAD files to play different versions and mods.</p>
+                </div>
+                <div class="feature">
+                    <h3>📱 Responsive Design</h3>
+                    <p>Works seamlessly on desktop and mobile devices.</p>
+                </div>
+            </div>
+        </section>
+        
+        <section class="section">
+            <h2>🎮 How It Works</h2>
+            <p>
+                This project uses the PrBoom DOOM engine compiled to WebAssembly using Emscripten. 
+                The result is a fully functional DOOM engine that runs natively in modern web browsers.
+            </p>
+            <h3>Technology Stack:</h3>
+            <ul>
+                <li><strong>PrBoom:</strong> Open-source DOOM engine</li>
+                <li><strong>Emscripten:</strong> C/C++ to WebAssembly compiler</li>
+                <li><strong>WebAssembly:</strong> High-performance binary format for the web</li>
+                <li><strong>HTML5 Canvas:</strong> For rendering the game graphics</li>
+            </ul>
+        </section>
+        
+        <section class="section">
+            <h2>🚀 Getting Started</h2>
+            <h3>For Players:</h3>
+            <p>
+                Once the game files are deployed, you'll be able to:
+            </p>
+            <ul>
+                <li>Play pre-loaded DOOM games directly in your browser</li>
+                <li>Upload custom .WAD files (Freedoom, DOOM Shareware, or licensed versions)</li>
+                <li>Enjoy classic DOOM gameplay with keyboard and mouse controls</li>
+            </ul>
+            
+            <h3>For Developers:</h3>
+            <p>To set up this project locally:</p>
+            <ol style="list-style: decimal; padding-left: 2rem;">
+                <li style="margin: 0.5rem 0;">Clone this repository</li>
+                <li style="margin: 0.5rem 0;">Add the webDOOM game files to <code>webDOOM/public/</code></li>
+                <li style="margin: 0.5rem 0;">Run a local HTTP server: <code>python3 -m http.server 8000</code></li>
+                <li style="margin: 0.5rem 0;">Open <code>http://localhost:8000</code> in your browser</li>
+            </ol>
+        </section>
+        
+        <section class="section">
+            <h2>📚 Resources</h2>
+            <ul>
+                <li><strong>Freedoom:</strong> Free and open-source DOOM-compatible game - <a href="https://freedoom.github.io/" target="_blank" rel="noopener noreferrer">freedoom.github.io</a></li>
+                <li><strong>DOOM Shareware:</strong> Original shareware version - Available on archive.org</li>
+                <li><strong>Emscripten:</strong> Toolchain documentation - <a href="https://emscripten.org/" target="_blank" rel="noopener noreferrer">emscripten.org</a></li>
+                <li><strong>DOOM Wiki:</strong> Comprehensive DOOM knowledge base - <a href="https://doomwiki.org/" target="_blank" rel="noopener noreferrer">doomwiki.org</a></li>
+            </ul>
+        </section>
+        
+        <div class="cta-container">
+            <a href="https://github.com/islamMendjel/project-DOOMbr" class="cta-button" target="_blank" rel="noopener noreferrer">
+                📦 View on GitHub
+            </a>
+            <a href="https://github.com/islamMendjel/project-DOOMbr#readme" class="cta-button" target="_blank" rel="noopener noreferrer">
+                📖 Read Documentation
+            </a>
+        </div>
+    </main>
+    
+    <footer>
+        <p>
+            &copy; 2024 webDOOM Project | Original DOOM by id Software | 
+            <a href="https://github.com/islamMendjel/project-DOOMbr/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">View License</a>
+        </p>
+        <p style="margin-top: 0.5rem; font-size: 0.9rem;">
+            This is a fan project for educational purposes. DOOM is a trademark of id Software.
+        </p>
+    </footer>
 </body>
 </html>

@@ -1,41 +1,157 @@
-# Play DOOM in Your Browser
+# webDOOM - Play DOOM in Your Browser
 
 > Experience the classic **DOOM** game right in your browser using **WebAssembly**!
 
-This project allows you to play DOOM directly in your web browser. You can either use the pre-loaded game versions or upload your own .WAD files (Doom Shareware, Freedoom, or any compatible DOOM .WAD file).
+This project is a GitHub Pages-ready repository for hosting a browser-based version of DOOM. The project uses WebAssembly to run the classic DOOM engine directly in your web browser, allowing you to play DOOM without any installation.
 
-🎮 **[Play Now on GitHub Pages](https://yourusername.github.io/project-webDOOM/webDOOM/public/)** _(Update with your GitHub username)_
+🎮 **[View Project on GitHub Pages](https://islamMendjel.github.io/project-DOOMbr/)**
 
-![DOOM Preview](webDOOM/public/preview.gif)
+## Project Status
+
+**Current State:** This repository contains the infrastructure and documentation for hosting webDOOM on GitHub Pages. The game engine files need to be added to the `webDOOM/public/` directory to enable full gameplay functionality.
+
+**What's Included:**
+- ✅ GitHub Pages configuration with `.nojekyll` file
+- ✅ Comprehensive documentation and guides
+- ✅ Landing page with project information
+- ✅ Proper meta tags for SEO and social sharing
+- ✅ Responsive design that works on all devices
+
+**What's Needed:**
+- The webDOOM game engine files (WebAssembly modules)
+- DOOM .WAD game data files
+- Game interface HTML, CSS, and JavaScript
 
 ## Features
 
-- 🚀 **Browser-Based Gaming**: Play DOOM without any installation
-- 📁 **Custom .WAD Support**: Upload your own DOOM .WAD files
-- 🎯 **Pre-loaded Games**: Includes DOOM and DOOM II ready to play
-- 🖥️ **WebAssembly Powered**: Compiled using Emscripten for optimal performance
+- 🚀 **Browser-Based Gaming**: Designed to play DOOM without any installation
+- 📁 **Custom .WAD Support**: Architecture supports uploading your own DOOM .WAD files
+- 🎯 **Pre-configured**: Ready for GitHub Pages deployment
+- 🖥️ **WebAssembly Powered**: Built to use Emscripten for optimal performance
 - 📱 **Responsive Design**: Works on desktop and mobile devices
+- 🎨 **Polished UI**: Clean, thematic design with proper meta tags and favicon
 
-## How to Play
+## Quick Start
 
-### Option 1: Upload Your Own .WAD File
+### View the Project
 
-1. Visit the game page
-2. Click on **"Choose .WAD File"** button
-3. Select your .WAD file from your computer:
-   - **Doom Shareware** (`doom1.wad`) - Free version available online
-   - **Freedoom** (`freedoom1.wad` or `freedoom2.wad`) - Free and open-source alternative
-   - **Full Doom/Doom II** - If you own the original game
-4. The game will automatically load and start!
+Simply visit the [GitHub Pages site](https://islamMendjel.github.io/project-DOOMbr/) to see the project landing page.
 
-### Option 2: Play Pre-loaded Games
+### Adding Game Files
 
-1. Visit the game page
-2. Click on either the **DOOM** or **DOOM II** preview image
-3. Wait for the game to load
+To enable full gameplay functionality:
+
+1. **Obtain the webDOOM engine files** (from the original webDOOM project or compile your own)
+2. **Place files in the `webDOOM/public/` directory:**
+   - `index.html` - Game interface
+   - `index.css` - Styling
+   - `index.js` - Game logic
+   - `doom.js` - WAD loader
+   - `doom1.wasm`, `doom2.wasm` - WebAssembly binaries
+   - `doom1.data`, `doom2.data` - Game data
+   - Any additional assets
+
+### Local Development
+
+1. **Clone the repository**:
+   ```bash
+   git clone https://github.com/islamMendjel/project-DOOMbr.git
+   cd project-DOOMbr
+   ```
+
+2. **Start a local HTTP server**:
+   ```bash
+   python3 -m http.server 8000
+   ```
+   
+   Or using Node.js:
+   ```bash
+   npx http-server -p 8000
+   ```
+
+3. **Open your browser**:
+   ```
+   http://localhost:8000
+   ```
+
+> **Note**: You must use an HTTP server. Opening `index.html` directly with `file://` protocol will not work due to WebAssembly security restrictions.
+
+## Where to Get .WAD Files and Game Engine
+
+### Game Engine Files
+
+The webDOOM engine can be obtained from:
+- **Original webDOOM Project**: [UstymUkhman/webDOOM](https://github.com/UstymUkhman/webDOOM)
+- Clone and build the project, then copy the `public/` directory contents to this repository's `webDOOM/public/` folder
+
+### Free .WAD Files
+
+1. **Doom Shareware**: 
+   - Download from: [Doom Shareware on archive.org](https://archive.org/details/DoomsharewareEpisode)
+   - File: `doom1.wad`
+   - Free version of the original DOOM
+
+2. **Freedoom**:
+   - Official website: [https://freedoom.github.io/](https://freedoom.github.io/)
+   - Download: Free and open-source DOOM-compatible game
+   - Files: `freedoom1.wad`, `freedoom2.wad`
+
+### Commercial .WAD Files
+
+If you own the original games, you can use:
+- **DOOM** (`doom.wad`)
+- **DOOM II** (`doom2.wad`)
+- **Ultimate DOOM** (`doomu.wad`)
+- Other compatible DOOM engine games
+
+> **Important**: This project does not include copyrighted game assets. You must provide your own .WAD files or use free alternatives like Freedoom.
+
+## Local Development & Testing
+
+### Prerequisites
+
+- Python 3.x (for local server) or Node.js with http-server
+- Modern web browser (Chrome, Firefox, Edge, Safari)
+- webDOOM game files (see "Where to Get .WAD Files and Game Engine" section)
+
+### Running Locally
+
+1. **Clone the repository**:
+   ```bash
+   git clone https://github.com/islamMendjel/project-DOOMbr.git
+   cd project-DOOMbr
+   ```
+
+2. **Add game files to `webDOOM/public/`** (if not already present)
+
+3. **Start a local HTTP server** from the project root:
+   
+   Using Python 3:
+   ```bash
+   python3 -m http.server 8000
+   ```
+   
+   Or using Node.js:
+   ```bash
+   npx http-server -p 8000
+   ```
+
+4. **Open your browser**:
+   ```
+   http://localhost:8000
+   ```
+
+> **Important**: You must use an HTTP server. Opening `index.html` directly with `file://` protocol will not work due to WebAssembly security restrictions.
+
+### Testing the Game
+
+Once game files are added:
+1. Navigate to `http://localhost:8000/webDOOM/public/`
+2. Upload a .WAD file or select a pre-loaded game
+3. Wait for loading to complete
 4. Start playing!
 
-### Game Controls
+### Game Controls (When Playing)
 
 - **W/A/S/D** or **Arrow Keys**: Move
 - **Mouse**: Look around
@@ -47,80 +163,11 @@ This project allows you to play DOOM directly in your web browser. You can eithe
 - **Tab**: Map
 - **Esc**: Menu
 
-## Where to Get .WAD Files
-
-### Free Options:
-
-1. **Doom Shareware**: 
-   - Download from: [Doom Shareware on archive.org](https://archive.org/details/DoomsharewareEpisode)
-   - File: `doom1.wad`
-
-2. **Freedoom**:
-   - Official website: [https://freedoom.github.io/](https://freedoom.github.io/)
-   - Download: Free and open-source DOOM-compatible game
-   - Files: `freedoom1.wad`, `freedoom2.wad`
-
-### Commercial Options:
-
-If you own the original games, you can use:
-- **DOOM** (`doom.wad`)
-- **DOOM II** (`doom2.wad`)
-- **Ultimate DOOM** (`doomu.wad`)
-- Other compatible DOOM engine games
-
-> **Note**: This project does not include copyrighted game assets. You must provide your own .WAD files.
-
-## Local Development & Testing
-
-### Prerequisites
-
-- Python 3.x (for local server) or any HTTP server
-- Modern web browser (Chrome, Firefox, Edge, Safari)
-
-### Running Locally
-
-1. **Clone the repository**:
-   ```bash
-   git clone https://github.com/yourusername/project-webDOOM.git
-   cd project-webDOOM
-   ```
-
-2. **Navigate to the public folder**:
-   ```bash
-   cd webDOOM/public
-   ```
-
-3. **Start a local HTTP server**:
-   
-   Using Python 3:
-   ```bash
-   python3 -m http.server 8000
-   ```
-   
-   Or using Python 2:
-   ```bash
-   python -m SimpleHTTPServer 8000
-   ```
-   
-   Or using Node.js (if you have `http-server` installed):
-   ```bash
-   npx http-server -p 8000
-   ```
-
-4. **Open your browser**:
-   ```
-   http://localhost:8000
-   ```
-
-5. **Upload a .WAD file or select a pre-loaded game** and start playing!
-
-> **Important**: You must use an HTTP server. Opening `index.html` directly with `file://` protocol will not work due to WebAssembly security restrictions.
-
 ## GitHub Pages Deployment
 
-This project is configured to be hosted on **GitHub Pages**. Follow these steps to deploy:
+This project is configured for **GitHub Pages** hosting.
 
-### Setup Instructions
+### Deployment Steps
 
 1. **Push your code to GitHub**:
    ```bash
@@ -137,39 +184,35 @@ This project is configured to be hosted on **GitHub Pages**. Follow these steps 
    - Select folder: **/ (root)**
    - Click **Save**
 
-3. **Wait for deployment**:
-   - GitHub will build and deploy your site (usually takes 1-2 minutes)
-   - Your site will be available at: `https://yourusername.github.io/project-webDOOM/webDOOM/public/`
+3. **Access your site**:
+   - Your site will be available at: `https://islamMendjel.github.io/project-DOOMbr/`
+   - Deployment typically takes 1-2 minutes
 
-4. **Configure Custom Path (Optional)**:
-   - If you want the game at the root URL, you can move the contents of `webDOOM/public/` to a `docs/` folder in the root
-   - Then select **docs** folder in GitHub Pages settings
+### Important Files
 
-### Important Files for GitHub Pages
-
-- **`.nojekyll`**: This file (already included) tells GitHub to bypass Jekyll processing
-- **`index.html`**: Main entry point in the `public` folder
+- **`.nojekyll`**: Tells GitHub to bypass Jekyll processing for static file serving
+- **`index.html`**: Main entry point with project information and navigation
 
 ## Project Structure
 
 ```
-project-webDOOM/
-├── .nojekyll                 # Bypass Jekyll processing
+project-DOOMbr/
+├── .nojekyll                 # Bypass Jekyll processing on GitHub Pages
+├── .gitignore                # Git ignore rules
+├── index.html                # Main landing page with project info
 ├── README.md                 # This file
-└── webDOOM/                  # Cloned webDOOM repository
-    ├── public/               # Web files for GitHub Pages
-    │   ├── index.html        # Main HTML page
-    │   ├── index.css         # Styling
-    │   ├── index.js          # Main JavaScript logic
-    │   ├── doom.js           # WAD file loader
-    │   ├── doom1.js          # DOOM 1 WebAssembly module
-    │   ├── doom1.wasm        # DOOM 1 WebAssembly binary
-    │   ├── doom1.data        # DOOM 1 game data
-    │   ├── doom2.js          # DOOM 2 WebAssembly module
-    │   ├── doom2.wasm        # DOOM 2 WebAssembly binary
-    │   ├── doom2.data        # DOOM 2 game data
-    │   └── img/              # Images
-    └── src/                  # Source code (C files)
+├── LICENSE                   # Project license
+├── GITHUB_PAGES.md          # GitHub Pages setup guide
+├── QUICKSTART.md            # Quick start guide
+└── webDOOM/                 # Directory for game files
+    └── public/              # Place webDOOM game files here
+        ├── index.html       # (To be added) Game interface
+        ├── index.css        # (To be added) Game styling
+        ├── index.js         # (To be added) Game logic
+        ├── doom.js          # (To be added) WAD loader
+        ├── *.wasm           # (To be added) WebAssembly binaries
+        ├── *.data           # (To be added) Game data files
+        └── img/             # (To be added) Game images
 ```
 
 ## Technical Details
@@ -191,20 +234,23 @@ This project uses:
 
 ### Browser Compatibility
 
+Requires a modern browser with:
+- ✅ WebAssembly support
+- ✅ JavaScript ES6+ support
+- ✅ HTML5 Canvas support
+
 Tested and working on:
 - ✅ Chrome 90+
 - ✅ Firefox 88+
 - ✅ Edge 90+
 - ✅ Safari 14+
 
-Requires:
-- WebAssembly support
-- JavaScript enabled
-- Modern browser with ES6 support
-
 ## Troubleshooting
 
-### Game won't load
+### Site shows landing page but no game
+**Solution**: Game files need to be added to the `webDOOM/public/` directory. See the "Where to Get .WAD Files and Game Engine" section.
+
+### Game won't load (when files are present)
 - Make sure you're using an HTTP server (not `file://`)
 - Check browser console for errors
 - Try a different .WAD file
