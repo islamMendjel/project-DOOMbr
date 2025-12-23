@@ -160,7 +160,7 @@
                 if (statusElement) {
                     statusElement.className = 'error';
                     // Use DOM manipulation for better security
-                    statusElement.innerHTML = '';
+                    statusElement.textContent = '';
                     var strong = document.createElement('strong');
                     strong.textContent = 'Failed to load doom.js';
                     statusElement.appendChild(strong);
