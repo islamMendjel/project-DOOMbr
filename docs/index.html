@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Play DOOM in your browser using js-dos emulator and Freedoom">
+    <meta name="description" content="Play DOOM Shareware v1.9 in your browser using js-dos emulator">
     <title>DOOM - Play in Browser</title>
     <style>
         * {
@@ -162,7 +162,7 @@
 <body>
     <div id="header">
         <h1>DOOM</h1>
-        <p>Powered by js-dos & Freedoom</p>
+        <p>Powered by js-dos | DOOM Shareware v1.9</p>
     </div>
 
     <div id="game-container">
@@ -182,8 +182,8 @@
         <p style="margin-top: 10px; color: #666; font-size: 0.85em;">Click inside the game to lock mouse. Press ESC to release.</p>
     </div>
 
-    <!-- js-dos v8 library from CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/js-dos@8/dist/js-dos.js"></script>
+    <!-- js-dos v7 library from unpkg CDN -->
+    <script src="https://unpkg.com/js-dos@6.22/dist/js-dos.js"></script>
     
     <script>
         const statusEl = document.getElementById('status');
@@ -209,73 +209,78 @@
             }, 1500);
         }
 
-        // Initialize js-dos v8
+        // Initialize js-dos v6.22
         setStatus('Loading DOOM emulator...');
 
-        if (typeof emulators === 'undefined' || typeof emulators.pathPrefix === 'undefined') {
-            showError('Failed to load js-dos library. Please check your internet connection and refresh the page.');
-        } else {
-            setStatus('Emulator loaded. Click "Start Game" to begin!');
-            startButton.classList.add('visible');
-            document.querySelector('.loader').style.display = 'none';
+        // Check if js-dos loaded
+        window.addEventListener('load', function() {
+            if (typeof Dos === 'undefined') {
+                showError('Failed to load js-dos library. Please check your internet connection and refresh the page.');
+            } else {
+                setStatus('Emulator loaded. Click "Start Game" to begin!');
+                startButton.classList.add('visible');
+                document.querySelector('.loader').style.display = 'none';
 
-            startButton.onclick = async () => {
-                try {
-                    startButton.disabled = true;
-                    startButton.textContent = 'Loading...';
-                    document.querySelector('.loader').style.display = 'block';
-                    
-                    setStatus('Preparing game files...');
+                startButton.onclick = async () => {
+                    try {
+                        startButton.disabled = true;
+                        startButton.textContent = 'Loading...';
+                        document.querySelector('.loader').style.display = 'block';
+                        
+                        setStatus('Initializing DOS environment...');
 
-                    // Use js-dos v8 with a DOOM bundle
-                    // This will use a pre-configured DOOM bundle from js-dos CDN
-                    setStatus('Initializing DOS environment...');
-                    
-                    const root = document.getElementById('jsdos');
-                    
-                    // Try to load a DOOM bundle - using a public DOOM bundle URL
-                    // Note: You can create your own bundle or use a public one
-                    const bundleUrl = 'https://cdn.dos.zone/original/2X/d/doom.jsdos';
-                    
-                    setStatus('Downloading DOOM bundle (this may take a moment)...');
-                    
-                    const ci = await emulators.dosWorker(root, {
-                        worker: true,
-                        progress: (stage, total, current) => {
-                            const percent = Math.round((current / total) * 100);
-                            setStatus(`Loading: ${stage} (${percent}%)...`);
-                        }
-                    });
-
-                    setStatus('Extracting game files...');
-                    await ci.fs.extract(bundleUrl);
-                    
-                    setStatus('Starting DOOM...');
-                    
-                    // Start the game
-                    // -1 parameter starts DOOM in single player mode (Episode 1)
-                    await ci.exec(['doom.exe', '-1'], bundleUrl);
-                    
-                    setStatus('DOOM is running! Click inside to play.');
-                    hideLoading();
-                    
-                } catch (error) {
-                    console.error('Error starting game:', error);
-                    showError(
-                        `<strong>Unable to start DOOM</strong><br><br>` +
-                        `Error: ${error.message}<br><br>` +
-                        `<span style="color: #aaa; font-size: 0.9em;">` +
-                        `This demo requires external game files. The DOOM bundle may not be accessible.<br><br>` +
-                        `<strong>Alternative:</strong> This page includes the free Freedoom WAD file (freedoom1.wad). ` +
-                        `To play, you need to create a complete bundle with DOOM.EXE and the WAD file.<br><br>` +
-                        `See the repository README for instructions on creating a custom bundle.` +
-                        `</span>`
-                    );
-                    startButton.disabled = false;
-                    startButton.textContent = 'Try Again';
-                }
-            };
-        }
+                        const root = document.getElementById('jsdos');
+                        
+                        // Use a publicly available DOOM shareware bundle
+                        // This bundle includes DOOM shareware (1.9) which is freely distributable
+                        const bundleUrl = 'https://cdn.dos.zone/original/2X/9/9ed7eb9c2c441f56656692ed4e736ff7ab423744.jsdos';
+                        
+                        setStatus('Downloading DOOM Shareware bundle...');
+                        setStatus('This may take 30-60 seconds depending on your connection...');
+                        
+                        // Initialize js-dos with the bundle
+                        Dos(root, {
+                            wdosboxUrl: "https://unpkg.com/js-dos@6.22/dist/wdosbox.js",
+                        }).ready((fs, main) => {
+                            setStatus('Loading DOOM bundle...');
+                            
+                            // Load the bundle and start the game
+                            fs.extract(bundleUrl).then(() => {
+                                setStatus('Starting DOOM Shareware...');
+                                
+                                main(["-c", "DOOM.EXE"]).then((ci) => {
+                                    setStatus('DOOM is running! Click inside to play.');
+                                    hideLoading();
+                                }).catch((error) => {
+                                    throw error;
+                                });
+                            }).catch((error) => {
+                                throw error;
+                            });
+                        }).catch((error) => {
+                            throw error;
+                        });
+                        
+                    } catch (error) {
+                        console.error('Error starting game:', error);
+                        showError(
+                            `<strong>Unable to start DOOM</strong><br><br>` +
+                            `Error: ${error.message}<br><br>` +
+                            `<span style="color: #aaa; font-size: 0.9em;">` +
+                            `The DOOM bundle could not be loaded. This may be due to:<br>` +
+                            `• Network connectivity issues<br>` +
+                            `• Browser security restrictions<br>` +
+                            `• CDN availability<br><br>` +
+                            `Please try refreshing the page or check your internet connection.<br><br>` +
+                            `<strong>Note:</strong> This uses DOOM Shareware v1.9, which is freely distributable.` +
+                            `</span>`
+                        );
+                        startButton.disabled = false;
+                        startButton.textContent = 'Try Again';
+                    }
+                };
+            }
+        });
     </script>
 
     <noscript>
