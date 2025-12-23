@@ -362,7 +362,7 @@ This repository does NOT include any DOOM WAD files or copyrighted game data. Yo
 6. **Deploy to GitHub Pages:**
    - Push your changes to the `main` branch
    - GitHub Actions will automatically build and deploy to GitHub Pages
-   - Your game will be available at: `https://<username>.github.io/<repository>/docs/`
+   - Your game will be available at: `https://<username>.github.io/<repository>/`
 
 **Automatic Deployment:**
 
