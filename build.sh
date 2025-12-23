@@ -33,6 +33,8 @@ echo "Output directory: ${OUTPUT_DIR}/"
 mkdir -p "${OUTPUT_DIR}"
 
 # Freedoom version
+# Version 0.12.1 released October 2019 - stable and well-tested
+# Check https://github.com/freedoom/freedoom/releases for newer versions
 FREEDOOM_VERSION="0.12.1"
 FREEDOOM_URL="https://github.com/freedoom/freedoom/releases/download/v${FREEDOOM_VERSION}/freedoom-${FREEDOOM_VERSION}.zip"
 TEMP_DIR=$(mktemp -d)

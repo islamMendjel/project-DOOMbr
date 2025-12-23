@@ -253,6 +253,7 @@
                     setStatus('Starting DOOM...');
                     
                     // Start the game
+                    // -1 parameter starts DOOM in single player mode (Episode 1)
                     await ci.exec(['doom.exe', '-1'], bundleUrl);
                     
                     setStatus('DOOM is running! Click inside to play.');
