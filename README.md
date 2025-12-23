@@ -298,6 +298,113 @@ Feel free to fork this project and submit pull requests for:
 - UI/UX enhancements
 - Documentation improvements
 
+## Run in Browser / GitHub Pages
+
+This repository can be built to **WebAssembly** and deployed to **GitHub Pages** for in-browser gameplay.
+
+### Automated Build and Deploy
+
+The repository includes a **GitHub Actions workflow** (`.github/workflows/build-and-deploy.yml`) that automatically:
+1. Compiles DOOM source code to WebAssembly using Emscripten
+2. Packages the game with a web-based loader
+3. Deploys to GitHub Pages
+
+The workflow triggers on:
+- **Push to main branch** (automatic deployment)
+- **Manual dispatch** (via GitHub Actions UI)
+
+### Important: WAD File Requirements
+
+⚠️ **WAD files are NOT included** in this repository due to licensing restrictions.
+
+To build and run the game, you need to:
+1. **Obtain a WAD file** (game data):
+   - **Free options**: [Freedoom](https://freedoom.github.io/) or [DOOM Shareware](https://distro.ibiblio.org/slitaz/sources/packages/d/doom1.wad)
+   - **Commercial**: Use your own copy if you own the original game
+2. **Place the WAD** at `data/doom.wad` in the repository
+3. **Commit and push** to trigger the build workflow
+
+Alternatively, modify `build.sh` to fetch a WAD from an external URL or implement runtime loading.
+
+### Local Build Instructions
+
+To build locally, you need **Emscripten SDK** installed:
+
+```bash
+# Install Emscripten SDK (one-time setup)
+git clone https://github.com/emscripten-core/emsdk.git
+cd emsdk
+./emsdk install latest
+./emsdk activate latest
+source ./emsdk_env.sh
+
+# Return to project directory
+cd /path/to/project-DOOMbr
+
+# Configure source files (edit build.sh)
+# Update SOURCE_FILES and INCLUDE_DIRS to match your source layout
+
+# Place WAD file (optional but recommended)
+mkdir -p data
+cp /path/to/your/doom.wad data/
+
+# Run build script
+./build.sh
+
+# Test locally
+cd docs
+python3 -m http.server 8000
+# Open http://localhost:8000 in browser
+```
+
+### Enabling GitHub Pages
+
+If Pages isn't enabled yet:
+
+1. Go to **Settings** → **Pages** in your repository
+2. Under **Source**, select:
+   - Branch: **`gh-pages`** (created by workflow)
+   - Folder: **`/ (root)`**
+3. Click **Save**
+4. Your site will be available at: `https://<username>.github.io/<repository>/`
+
+### Notes on Large WADs and Git LFS
+
+- **Large WAD files** (> 50 MB) may cause issues with standard Git
+- Consider using **Git Large File Storage (LFS)** for WAD files:
+  ```bash
+  git lfs install
+  git lfs track "*.wad"
+  git add .gitattributes
+  ```
+- Alternatively, **fetch WADs at build time** by modifying `build.sh`:
+  ```bash
+  # Example: Download Freedoom WAD during build
+  curl -L -o data/doom.wad https://example.com/freedoom1.wad
+  ```
+
+### Build Script Customization
+
+The `build.sh` script uses **placeholder source file patterns**. Before building:
+
+1. **Edit `build.sh`** to match your repository structure
+2. Update these variables:
+   - `SOURCE_FILES`: Glob pattern for C/C++ source files
+   - `INCLUDE_DIRS`: Directories containing header files
+   - `WAD_PATH`: Location of your WAD file
+3. Adjust **Emscripten flags** if needed (optimization, memory settings, etc.)
+
+Example configurations:
+```bash
+# For PrBoom source layout
+SOURCE_FILES="prboom/*.c prboom/engine/*.c"
+INCLUDE_DIRS="-Iprboom -Iprboom/engine"
+
+# For Chocolate DOOM
+SOURCE_FILES="src/*.c src/doom/*.c"
+INCLUDE_DIRS="-Isrc -Isrc/doom"
+```
+
 ## Resources
 
 - [Original webDOOM Project](https://github.com/UstymUkhman/webDOOM)
