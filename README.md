@@ -1,55 +1,37 @@
-# webDOOM - Play DOOM in Your Browser
+# DOOM in Browser - Play Classic DOOM Online
 
-> Experience the classic **DOOM** game right in your browser using **WebAssembly**!
+> Experience the classic **DOOM** game right in your browser using **js-dos** emulator!
 
-This project is a GitHub Pages-ready repository for hosting a browser-based version of DOOM. The project uses WebAssembly to run the classic DOOM engine directly in your web browser, allowing you to play DOOM without any installation.
+Play DOOM directly in your web browser without any installation. This project uses js-dos (a DOS emulator for browsers) and Freedoom (free DOOM-compatible game data) to bring the classic FPS experience to the web.
 
-🎮 **[View Project on GitHub Pages](https://islamMendjel.github.io/project-DOOMbr/)**
+🎮 **[Play Now on GitHub Pages](https://islamMendjel.github.io/project-DOOMbr/)**
 
 ## Project Status
 
-**Current State:** This repository contains the infrastructure and documentation for hosting webDOOM on GitHub Pages. The game engine files need to be added to the `webDOOM/public/` directory to enable full gameplay functionality.
+**✅ Ready to Play!** This repository is fully configured and ready to deploy DOOM to GitHub Pages.
 
 **What's Included:**
-- ✅ GitHub Pages configuration with `.nojekyll` file
-- ✅ Comprehensive documentation and guides
-- ✅ Landing page with project information
-- ✅ Proper meta tags for SEO and social sharing
-- ✅ Responsive design that works on all devices
-
-**What's Needed:**
-- The webDOOM game engine files (WebAssembly modules)
-- DOOM .WAD game data files
-- Game interface HTML, CSS, and JavaScript
+- ✅ Browser-based DOOM player using js-dos v8
+- ✅ Freedoom Phase 1 WAD file (free, open-source game data)
+- ✅ Automated deployment via GitHub Actions
+- ✅ Dark red DOOM-themed interface
+- ✅ Full keyboard controls support
+- ✅ Responsive design for all devices
 
 ## Features
 
-- 🚀 **Browser-Based Gaming**: Designed to play DOOM without any installation
-- 📁 **Custom .WAD Support**: Architecture supports uploading your own DOOM .WAD files
-- 🎯 **Pre-configured**: Ready for GitHub Pages deployment
-- 🖥️ **WebAssembly Powered**: Built to use Emscripten for optimal performance
-- 📱 **Responsive Design**: Works on desktop and mobile devices
-- 🎨 **Polished UI**: Clean, thematic design with proper meta tags and favicon
+- 🚀 **No Installation Required**: Play DOOM directly in your browser
+- 🎮 **DOS Emulation**: Powered by js-dos for authentic DOOM experience
+- 🆓 **Free & Open Source**: Uses Freedoom, a completely free DOOM-compatible game
+- 🎯 **One-Click Deploy**: Automated GitHub Actions workflow
+- 📱 **Responsive**: Works on desktop and mobile devices
+- 🎨 **Themed UI**: Classic DOOM dark red aesthetic
 
 ## Quick Start
 
-### View the Project
+### Play Online
 
-Simply visit the [GitHub Pages site](https://islamMendjel.github.io/project-DOOMbr/) to see the project landing page.
-
-### Adding Game Files
-
-To enable full gameplay functionality:
-
-1. **Obtain the webDOOM engine files** (from the original webDOOM project or compile your own)
-2. **Place files in the `webDOOM/public/` directory:**
-   - `index.html` - Game interface
-   - `index.css` - Styling
-   - `index.js` - Game logic
-   - `doom.js` - WAD loader
-   - `doom1.wasm`, `doom2.wasm` - WebAssembly binaries
-   - `doom1.data`, `doom2.data` - Game data
-   - Any additional assets
+Simply visit **[https://islamMendjel.github.io/project-DOOMbr/](https://islamMendjel.github.io/project-DOOMbr/)** to play DOOM in your browser!
 
 ### Local Development
 
@@ -59,44 +41,274 @@ To enable full gameplay functionality:
    cd project-DOOMbr
    ```
 
-2. **Start a local HTTP server**:
+2. **Download game assets** (if not already present):
    ```bash
+   ./build.sh
+   ```
+   This downloads the Freedoom WAD file to the `docs/` directory.
+
+3. **Start a local HTTP server**:
+   ```bash
+   cd docs
    python3 -m http.server 8000
    ```
    
    Or using Node.js:
    ```bash
+   cd docs
    npx http-server -p 8000
    ```
 
-3. **Open your browser**:
+4. **Open your browser**:
    ```
    http://localhost:8000
    ```
 
-> **Note**: You must use an HTTP server. Opening `index.html` directly with `file://` protocol will not work due to WebAssembly security restrictions.
+5. **Click "Start Game"** and enjoy!
 
-## Where to Get .WAD Files and Game Engine
+> **Note**: You must use an HTTP server. Opening `index.html` directly with `file://` protocol will not work due to browser security restrictions.
 
-### Game Engine Files
+## How It Works
 
-The webDOOM engine can be obtained from:
-- **Original webDOOM Project**: [UstymUkhman/webDOOM](https://github.com/UstymUkhman/webDOOM)
-- Clone and build the project, then copy the `public/` directory contents to this repository's `webDOOM/public/` folder
+### Technology Stack
 
-### Free .WAD Files
+- **js-dos v8**: DOS emulator that runs in the browser using WebAssembly
+- **Freedoom**: Free and open-source DOOM-compatible game (Phase 1 WAD)
+- **GitHub Pages**: Free hosting for the browser-based game
+- **GitHub Actions**: Automated deployment workflow
 
-1. **Doom Shareware**: 
-   - Download from: [Doom Shareware on archive.org](https://archive.org/details/DoomsharewareEpisode)
-   - File: `doom1.wad`
-   - Free version of the original DOOM
+### Architecture
 
-2. **Freedoom**:
-   - Official website: [https://freedoom.github.io/](https://freedoom.github.io/)
-   - Download: Free and open-source DOOM-compatible game
-   - Files: `freedoom1.wad`, `freedoom2.wad`
+```
+┌─────────────────┐
+│   Web Browser   │
+│                 │
+│  ┌───────────┐  │
+│  │  js-dos   │  │  ← DOS emulator (WebAssembly)
+│  │           │  │
+│  │ ┌───────┐ │  │
+│  │ │ DOOM  │ │  │  ← DOS game executable
+│  │ │ .EXE  │ │  │
+│  │ └───┬───┘ │  │
+│  │     │     │  │
+│  │ ┌───▼────┐│  │
+│  │ │Freedoom││  │  ← Game data (WAD file)
+│  │ │  .WAD  ││  │
+│  │ └────────┘│  │
+│  └───────────┘  │
+└─────────────────┘
+```
 
-### Commercial .WAD Files
+1. User visits the GitHub Pages URL
+2. Browser loads `index.html` with js-dos library
+3. js-dos initializes a DOS environment in the browser
+4. DOOM executable and Freedoom WAD are loaded into the virtual filesystem
+5. Game starts and renders directly in the browser canvas
+
+## Game Controls
+
+| Key | Action |
+|-----|--------|
+| **Arrow Keys** | Move forward/backward, turn left/right |
+| **Ctrl** | Fire weapon |
+| **Space** | Use/Open doors |
+| **Alt** | Strafe (side-step) |
+| **Shift** | Run |
+| **1-7** | Select weapon |
+| **Tab** | Map |
+| **ESC** | Menu/Pause |
+
+> **Tip**: Click inside the game window to lock the mouse cursor for better control. Press ESC to release.
+
+## Deployment
+
+### Automated Deployment (GitHub Actions)
+
+The repository includes a GitHub Actions workflow that automatically:
+1. Downloads the Freedoom WAD file
+2. Prepares all game assets
+3. Deploys to GitHub Pages
+
+The workflow triggers on:
+- **Push to main branch** (automatic deployment)
+- **Manual dispatch** (via GitHub Actions UI)
+
+### Manual Deployment
+
+```bash
+# Download game assets
+./build.sh
+
+# Commit and push
+git add docs/
+git commit -m "Update DOOM game assets"
+git push origin main
+
+# GitHub Actions will automatically deploy to Pages
+```
+
+### First-Time GitHub Pages Setup
+
+1. Go to your repository on GitHub
+2. Click **Settings** → **Pages**
+3. Under **Source**, select:
+   - Branch: **`gh-pages`** (created by workflow)
+   - Folder: **`/ (root)`**
+4. Click **Save**
+5. Your site will be available at: `https://<username>.github.io/project-DOOMbr/`
+
+## About Freedoom
+
+This project uses **Freedoom**, a free and open-source DOOM-compatible game:
+
+- **License**: BSD 3-Clause License
+- **Website**: [https://freedoom.github.io/](https://freedoom.github.io/)
+- **Compatibility**: Works with the original DOOM engine
+- **Content**: Complete game with levels, textures, sounds, and music
+- **Legal**: 100% free to use, modify, and distribute
+
+Freedoom is not the original DOOM, but a completely free replacement that works with DOOM engines. It offers a similar gameplay experience without any licensing restrictions.
+
+## Project Structure
+
+```
+project-DOOMbr/
+├── .github/
+│   └── workflows/
+│       └── build-and-deploy.yml    # GitHub Actions deployment workflow
+├── docs/                           # Deployment directory (GitHub Pages)
+│   ├── index.html                  # DOOM player interface
+│   └── freedoom1.wad              # Game data (27 MB)
+├── build.sh                        # Script to download game assets
+├── README.md                       # This file
+└── .nojekyll                      # Bypass Jekyll processing
+```
+
+## Advanced Usage
+
+### Using Custom WAD Files
+
+Want to use your own DOOM WAD files? Here's how:
+
+1. **Replace the WAD file** in `docs/`:
+   ```bash
+   # Remove Freedoom
+   rm docs/freedoom1.wad
+   
+   # Add your WAD file
+   cp /path/to/your/doom.wad docs/
+   ```
+
+2. **Update `docs/index.html`** to load your WAD file (search for `freedoom1.wad` and replace with your filename)
+
+3. **Deploy**:
+   ```bash
+   git add docs/
+   git commit -m "Add custom WAD file"
+   git push origin main
+   ```
+
+> **Note**: Ensure you have legal rights to use any commercial WAD files. The original DOOM WAD files are copyrighted by id Software.
+
+### Creating a Custom js-dos Bundle
+
+For advanced users, you can create a pre-configured `.jsdos` bundle:
+
+1. Install js-dos CLI tools
+2. Create a bundle with DOOM.EXE and your WAD file
+3. Host the bundle and update `index.html` to load it
+
+See [js-dos documentation](https://js-dos.com/) for details.
+
+## Troubleshooting
+
+### Game Won't Start
+
+**Problem**: Clicking "Start Game" shows an error.
+
+**Solutions**:
+- Ensure `freedoom1.wad` exists in the `docs/` directory
+- Check browser console for errors (F12)
+- Try refreshing the page
+- Ensure you're using a modern browser (Chrome, Firefox, Edge, Safari)
+
+### Black Screen
+
+**Problem**: Game loads but shows a black screen.
+
+**Solutions**:
+- Wait for the game to fully load (can take 10-30 seconds)
+- Click inside the game window to focus it
+- Check if your browser supports WebAssembly
+- Try disabling browser extensions
+
+### No Sound
+
+**Problem**: Game runs but there's no audio.
+
+**Solutions**:
+- Click inside the game window (browsers require user interaction for audio)
+- Check browser volume settings
+- Some browsers block audio by default - check browser permissions
+
+### Slow Performance
+
+**Problem**: Game is laggy or slow.
+
+**Solutions**:
+- Close other browser tabs
+- Try a different browser (Chrome usually has best performance)
+- Reduce browser window size
+- Check CPU usage - DOS emulation can be CPU-intensive
+
+## Browser Compatibility
+
+| Browser | Supported | Notes |
+|---------|-----------|-------|
+| Chrome 90+ | ✅ Yes | Best performance |
+| Firefox 88+ | ✅ Yes | Good performance |
+| Edge 90+ | ✅ Yes | Good performance |
+| Safari 14+ | ✅ Yes | May require additional permissions |
+| Mobile Safari | ⚠️ Limited | Touch controls may be difficult |
+| Mobile Chrome | ⚠️ Limited | Touch controls may be difficult |
+
+## Credits & Acknowledgments
+
+- **Original DOOM**: id Software
+- **Freedoom**: Freedoom Project contributors
+- **js-dos**: Alexey Gordienko ([js-dos.com](https://js-dos.com/))
+- **DOSBox**: DOSBox Team (underlying emulation technology)
+
+## License
+
+- **This Project**: MIT License (see LICENSE file)
+- **Freedoom**: BSD 3-Clause License
+- **js-dos**: MIT License
+- **Original DOOM**: id Software (not included, only used as inspiration)
+
+This project provides the infrastructure to play DOOM in a browser. The original DOOM game assets are copyrighted by id Software. This project uses Freedoom, a free replacement, to avoid any licensing issues.
+
+## Contributing
+
+Contributions are welcome! Feel free to:
+- Report bugs or issues
+- Suggest improvements
+- Submit pull requests
+- Share your custom DOOM experiences
+
+## Resources
+
+- [js-dos Official Site](https://js-dos.com/)
+- [js-dos GitHub](https://github.com/caiiiycuk/js-dos)
+- [Freedoom Project](https://freedoom.github.io/)
+- [DOOM Wiki](https://doomwiki.org/)
+- [DOSBox](https://www.dosbox.com/)
+
+---
+
+**Enjoy playing DOOM in your browser! 🎮👾**
+
+For issues or questions, please [open an issue](https://github.com/islamMendjel/project-DOOMbr/issues) on GitHub.
 
 If you own the original games, you can use:
 - **DOOM** (`doom.wad`)
