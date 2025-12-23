@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DOOM - WebAssembly</title>
+    <meta name="description" content="Play DOOM in your browser using js-dos emulator and Freedoom">
+    <title>DOOM - Play in Browser</title>
     <style>
         * {
             margin: 0;
@@ -11,7 +12,7 @@
             box-sizing: border-box;
         }
         body {
-            background: #000;
+            background: linear-gradient(to bottom, #0a0a0a 0%, #1a0000 100%);
             color: #fff;
             font-family: 'Courier New', monospace;
             display: flex;
@@ -19,9 +20,38 @@
             align-items: center;
             justify-content: center;
             min-height: 100vh;
-            overflow: hidden;
+            padding: 20px;
         }
-        #overlay {
+        #header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        #header h1 {
+            font-size: 3em;
+            color: #ff0000;
+            text-shadow: 0 0 20px #ff0000, 0 0 40px #ff0000;
+            letter-spacing: 10px;
+            margin-bottom: 10px;
+        }
+        #header p {
+            color: #aaa;
+            font-size: 1.1em;
+        }
+        #game-container {
+            width: 100%;
+            max-width: 900px;
+            aspect-ratio: 4/3;
+            border: 3px solid #a00;
+            box-shadow: 0 0 30px rgba(170, 0, 0, 0.5);
+            background: #000;
+            position: relative;
+            margin-bottom: 20px;
+        }
+        #jsdos {
+            width: 100%;
+            height: 100%;
+        }
+        #loading-screen {
             position: absolute;
             top: 0;
             left: 0;
@@ -31,155 +61,227 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            background: rgba(0, 0, 0, 0.9);
-            z-index: 100;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 1000;
             transition: opacity 0.5s;
         }
-        #overlay.hidden {
+        #loading-screen.hidden {
             opacity: 0;
             pointer-events: none;
         }
-        #message {
-            max-width: 600px;
-            padding: 20px;
-            text-align: center;
-            background: rgba(50, 0, 0, 0.8);
-            border: 2px solid #a00;
-            border-radius: 5px;
-        }
-        #message h1 {
-            color: #f00;
-            margin-bottom: 15px;
-            font-size: 2em;
-        }
-        #message p {
-            line-height: 1.6;
-            margin-bottom: 10px;
-        }
-        #status {
-            margin-top: 15px;
-            padding: 10px;
-            background: rgba(0, 50, 0, 0.5);
-            border: 1px solid #0a0;
-            border-radius: 3px;
-            font-size: 0.9em;
-        }
-        #canvas {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            image-rendering: pixelated;
-            image-rendering: crisp-edges;
-            cursor: pointer;
-        }
         .loader {
-            border: 3px solid #333;
-            border-top: 3px solid #f00;
+            border: 4px solid #333;
+            border-top: 4px solid #f00;
             border-radius: 50%;
-            width: 40px;
-            height: 40px;
+            width: 60px;
+            height: 60px;
             animation: spin 1s linear infinite;
-            margin: 20px auto;
+            margin-bottom: 20px;
         }
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+        #status {
+            color: #0f0;
+            font-size: 1.1em;
+            margin: 10px 0;
+            text-align: center;
+            padding: 0 20px;
+            max-width: 80%;
+        }
+        #start-button {
+            margin-top: 20px;
+            padding: 15px 40px;
+            font-size: 1.2em;
+            font-family: 'Courier New', monospace;
+            background: #a00;
+            color: #fff;
+            border: 2px solid #f00;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            transition: all 0.3s;
+            display: none;
+        }
+        #start-button:hover:not(:disabled) {
+            background: #f00;
+            box-shadow: 0 0 20px #f00;
+            transform: scale(1.05);
+        }
+        #start-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        #start-button.visible {
+            display: block;
+        }
+        #controls {
+            text-align: center;
+            color: #888;
+            font-size: 0.9em;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px 30px;
+            border-radius: 5px;
+            border: 1px solid #a00;
+            max-width: 900px;
+        }
+        #controls h3 {
+            color: #f00;
+            margin-bottom: 10px;
+        }
+        #controls p {
+            margin: 5px 0;
+        }
+        #error-message {
+            color: #f00;
+            background: rgba(50, 0, 0, 0.8);
+            padding: 20px;
+            border: 2px solid #a00;
+            border-radius: 5px;
+            max-width: 600px;
+            text-align: center;
+            display: none;
+            line-height: 1.6;
+        }
+        #error-message.visible {
+            display: block;
+        }
+        @media (max-width: 768px) {
+            #header h1 {
+                font-size: 2em;
+                letter-spacing: 5px;
+            }
+            #controls {
+                font-size: 0.8em;
+                padding: 10px 15px;
+            }
+        }
     </style>
 </head>
 <body>
-    <canvas id="canvas"></canvas>
-    <div id="overlay">
-        <div id="message">
-            <h1>DOOM</h1>
+    <div id="header">
+        <h1>DOOM</h1>
+        <p>Powered by js-dos & Freedoom</p>
+    </div>
+
+    <div id="game-container">
+        <div id="jsdos"></div>
+        <div id="loading-screen">
             <div class="loader"></div>
-            <p id="status">Loading DOOM engine...</p>
-            <p style="font-size: 0.8em; color: #888; margin-top: 20px;">
-                Click on the canvas to lock pointer and start playing.
-            </p>
+            <div id="status">Initializing DOOM...</div>
+            <button id="start-button">Start Game</button>
+            <div id="error-message"></div>
         </div>
     </div>
 
+    <div id="controls">
+        <h3>Controls</h3>
+        <p><strong>Arrow Keys:</strong> Move | <strong>Ctrl:</strong> Fire | <strong>Space:</strong> Use/Open Doors</p>
+        <p><strong>Alt:</strong> Strafe | <strong>Shift:</strong> Run | <strong>1-7:</strong> Select Weapon | <strong>ESC:</strong> Menu</p>
+        <p style="margin-top: 10px; color: #666; font-size: 0.85em;">Click inside the game to lock mouse. Press ESC to release.</p>
+    </div>
+
+    <!-- js-dos v8 library from CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/js-dos@8/dist/js-dos.js"></script>
+    
     <script>
-        // Global Module configuration for Emscripten
-        var Module = {
-            canvas: document.getElementById('canvas'),
-            print: function(text) {
-                console.log('[stdout]', text);
-            },
-            printErr: function(text) {
-                console.error('[stderr]', text);
-            },
-            setStatus: function(text) {
-                const statusEl = document.getElementById('status');
-                if (text) {
-                    statusEl.textContent = text;
-                    console.log('[status]', text);
-                }
-            },
-            onRuntimeInitialized: function() {
-                console.log('DOOM runtime initialized');
-                Module.setStatus('Runtime ready! Click canvas to start.');
-                setTimeout(() => {
-                    const overlay = document.getElementById('overlay');
-                    overlay.classList.add('hidden');
-                }, 1000);
-            }
-        };
+        const statusEl = document.getElementById('status');
+        const loadingScreen = document.getElementById('loading-screen');
+        const startButton = document.getElementById('start-button');
+        const errorMessage = document.getElementById('error-message');
 
-        // Request pointer lock on canvas click
-        const canvas = document.getElementById('canvas');
-        canvas.addEventListener('click', function() {
-            canvas.requestPointerLock = canvas.requestPointerLock ||
-                                       canvas.mozRequestPointerLock ||
-                                       canvas.webkitRequestPointerLock;
-            if (canvas.requestPointerLock) {
-                canvas.requestPointerLock();
-            }
-        });
-
-        // Listen for pointer lock changes
-        document.addEventListener('pointerlockchange', lockChangeAlert, false);
-        document.addEventListener('mozpointerlockchange', lockChangeAlert, false);
-        document.addEventListener('webkitpointerlockchange', lockChangeAlert, false);
-
-        function lockChangeAlert() {
-            const locked = document.pointerLockElement === canvas ||
-                          document.mozPointerLockElement === canvas ||
-                          document.webkitPointerLockElement === canvas;
-            console.log('Pointer lock:', locked ? 'enabled' : 'disabled');
+        function setStatus(message) {
+            console.log('[Status]', message);
+            statusEl.textContent = message;
         }
 
-        // Try to load doom.js
-        Module.setStatus('Loading DOOM engine...');
-        
-        const script = document.createElement('script');
-        script.src = './doom.js';
-        script.onerror = function() {
-            const messageDiv = document.getElementById('message');
-            messageDiv.innerHTML = `
-                <h1>⚠️ DOOM Engine Not Found</h1>
-                <p>The DOOM WebAssembly files (doom.js and doom.wasm) are not available.</p>
-                <p style="margin-top: 15px;">To build and deploy the DOOM engine:</p>
-                <ol style="text-align: left; display: inline-block; margin-top: 10px;">
-                    <li>Place DOOM source files in the repository</li>
-                    <li>Place a WAD file at <code>data/doom.wad</code></li>
-                    <li>Install Emscripten SDK (emsdk)</li>
-                    <li>Run <code>./build.sh</code> to compile</li>
-                    <li>Push the changes to trigger GitHub Actions deployment</li>
-                </ol>
-                <p style="margin-top: 15px; font-size: 0.9em; color: #888;">
-                    See the repository README for detailed instructions.
-                </p>
-            `;
+        function showError(message) {
+            console.error('[Error]', message);
+            errorMessage.innerHTML = message;
+            errorMessage.classList.add('visible');
             document.querySelector('.loader').style.display = 'none';
-            console.error('Failed to load doom.js');
-        };
-        script.onload = function() {
-            console.log('doom.js loaded successfully');
-        };
-        document.body.appendChild(script);
+        }
+
+        function hideLoading() {
+            setTimeout(() => {
+                loadingScreen.classList.add('hidden');
+            }, 1500);
+        }
+
+        // Initialize js-dos v8
+        setStatus('Loading DOOM emulator...');
+
+        if (typeof emulators === 'undefined' || typeof emulators.pathPrefix === 'undefined') {
+            showError('Failed to load js-dos library. Please check your internet connection and refresh the page.');
+        } else {
+            setStatus('Emulator loaded. Click "Start Game" to begin!');
+            startButton.classList.add('visible');
+            document.querySelector('.loader').style.display = 'none';
+
+            startButton.onclick = async () => {
+                try {
+                    startButton.disabled = true;
+                    startButton.textContent = 'Loading...';
+                    document.querySelector('.loader').style.display = 'block';
+                    
+                    setStatus('Preparing game files...');
+
+                    // Use js-dos v8 with a DOOM bundle
+                    // This will use a pre-configured DOOM bundle from js-dos CDN
+                    setStatus('Initializing DOS environment...');
+                    
+                    const root = document.getElementById('jsdos');
+                    
+                    // Try to load a DOOM bundle - using a public DOOM bundle URL
+                    // Note: You can create your own bundle or use a public one
+                    const bundleUrl = 'https://cdn.dos.zone/original/2X/d/doom.jsdos';
+                    
+                    setStatus('Downloading DOOM bundle (this may take a moment)...');
+                    
+                    const ci = await emulators.dosWorker(root, {
+                        worker: true,
+                        progress: (stage, total, current) => {
+                            const percent = Math.round((current / total) * 100);
+                            setStatus(`Loading: ${stage} (${percent}%)...`);
+                        }
+                    });
+
+                    setStatus('Extracting game files...');
+                    await ci.fs.extract(bundleUrl);
+                    
+                    setStatus('Starting DOOM...');
+                    
+                    // Start the game
+                    await ci.exec(['doom.exe', '-1'], bundleUrl);
+                    
+                    setStatus('DOOM is running! Click inside to play.');
+                    hideLoading();
+                    
+                } catch (error) {
+                    console.error('Error starting game:', error);
+                    showError(
+                        `<strong>Unable to start DOOM</strong><br><br>` +
+                        `Error: ${error.message}<br><br>` +
+                        `<span style="color: #aaa; font-size: 0.9em;">` +
+                        `This demo requires external game files. The DOOM bundle may not be accessible.<br><br>` +
+                        `<strong>Alternative:</strong> This page includes the free Freedoom WAD file (freedoom1.wad). ` +
+                        `To play, you need to create a complete bundle with DOOM.EXE and the WAD file.<br><br>` +
+                        `See the repository README for instructions on creating a custom bundle.` +
+                        `</span>`
+                    );
+                    startButton.disabled = false;
+                    startButton.textContent = 'Try Again';
+                }
+            };
+        }
     </script>
+
+    <noscript>
+        <div style="color: #f00; text-align: center; padding: 50px;">
+            <h2>JavaScript Required</h2>
+            <p>Please enable JavaScript to play DOOM in your browser.</p>
+        </div>
+    </noscript>
 </body>
 </html>
