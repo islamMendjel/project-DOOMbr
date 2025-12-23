@@ -139,6 +139,21 @@
             box-shadow: 0 6px 20px rgba(255, 0, 0, 0.5);
         }
         
+        .cta-button-primary {
+            background: #ff0000;
+            border-color: #ff0000;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+        
+        .cta-button-primary:hover {
+            background: #cc0000;
+            border-color: #cc0000;
+            color: #fff;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 0, 0, 0.7);
+        }
+        
         .cta-container {
             text-align: center;
             margin: 2rem 0;
@@ -236,9 +251,9 @@
             </p>
             <div class="info-box">
                 <p>
-                    <strong>Note:</strong> This repository is configured for GitHub Pages deployment. 
-                    The game engine files can be added to the <code>webDOOM/public/</code> directory 
-                    to enable browser-based gameplay.
+                    <strong>Ready to Play!</strong> The game is now fully configured and playable. 
+                    Click the <strong>"PLAY NOW"</strong> button above to start playing DOOM Shareware v1.9 
+                    directly in your browser using js-dos emulation.
                 </p>
             </div>
         </section>
@@ -251,16 +266,16 @@
                     <p>Play directly in your browser without downloading or installing anything.</p>
                 </div>
                 <div class="feature">
-                    <h3>🎯 WebAssembly Powered</h3>
-                    <p>Leverages WebAssembly for near-native performance in the browser.</p>
+                    <h3>🎯 DOS Emulation</h3>
+                    <p>Authentic DOOM Shareware v1.9 running in a DOS emulator via WebAssembly.</p>
                 </div>
                 <div class="feature">
-                    <h3>📁 Custom WAD Support</h3>
-                    <p>Upload your own DOOM .WAD files to play different versions and mods.</p>
+                    <h3>🆓 Freely Available</h3>
+                    <p>Uses DOOM Shareware, which is freely and legally distributable.</p>
                 </div>
                 <div class="feature">
                     <h3>📱 Responsive Design</h3>
-                    <p>Works seamlessly on desktop and mobile devices.</p>
+                    <p>Works on desktop browsers with full keyboard control support.</p>
                 </div>
             </div>
         </section>
@@ -268,13 +283,15 @@
         <section class="section">
             <h2>🎮 How It Works</h2>
             <p>
-                This project uses the PrBoom DOOM engine compiled to WebAssembly using Emscripten. 
-                The result is a fully functional DOOM engine that runs natively in modern web browsers.
+                This project uses js-dos, a powerful DOS emulator that runs in your browser using WebAssembly. 
+                It loads and executes the original DOOM Shareware v1.9, providing an authentic retro gaming experience 
+                with no installation required.
             </p>
             <h3>Technology Stack:</h3>
             <ul>
-                <li><strong>PrBoom:</strong> Open-source DOOM engine</li>
-                <li><strong>Emscripten:</strong> C/C++ to WebAssembly compiler</li>
+                <li><strong>js-dos:</strong> DOS emulator compiled to WebAssembly</li>
+                <li><strong>DOSBox:</strong> The underlying DOS emulation engine</li>
+                <li><strong>DOOM Shareware v1.9:</strong> Freely distributable classic game</li>
                 <li><strong>WebAssembly:</strong> High-performance binary format for the web</li>
                 <li><strong>HTML5 Canvas:</strong> For rendering the game graphics</li>
             </ul>
@@ -284,35 +301,39 @@
             <h2>🚀 Getting Started</h2>
             <h3>For Players:</h3>
             <p>
-                Once the game files are deployed, you'll be able to:
+                The game is ready to play right now! Just:
             </p>
             <ul>
-                <li>Play pre-loaded DOOM games directly in your browser</li>
-                <li>Upload custom .WAD files (Freedoom, DOOM Shareware, or licensed versions)</li>
-                <li>Enjoy classic DOOM gameplay with keyboard and mouse controls</li>
+                <li>Click the <strong>"PLAY NOW"</strong> button above</li>
+                <li>Wait for the DOOM Shareware bundle to load (30-60 seconds)</li>
+                <li>Click "Start Game" when prompted</li>
+                <li>Enjoy classic DOOM gameplay with keyboard controls</li>
             </ul>
             
             <h3>For Developers:</h3>
             <p>To set up this project locally:</p>
             <ol style="list-style: decimal; padding-left: 2rem;">
                 <li style="margin: 0.5rem 0;">Clone this repository</li>
-                <li style="margin: 0.5rem 0;">Add the webDOOM game files to <code>webDOOM/public/</code></li>
                 <li style="margin: 0.5rem 0;">Run a local HTTP server: <code>python3 -m http.server 8000</code></li>
                 <li style="margin: 0.5rem 0;">Open <code>http://localhost:8000</code> in your browser</li>
+                <li style="margin: 0.5rem 0;">Navigate to the game at <code>http://localhost:8000/docs/</code></li>
             </ol>
         </section>
         
         <section class="section">
             <h2>📚 Resources</h2>
             <ul>
-                <li><strong>Freedoom:</strong> Free and open-source DOOM-compatible game - <a href="https://freedoom.github.io/" target="_blank" rel="noopener noreferrer">freedoom.github.io</a></li>
-                <li><strong>DOOM Shareware:</strong> Original shareware version - Available on archive.org</li>
-                <li><strong>Emscripten:</strong> Toolchain documentation - <a href="https://emscripten.org/" target="_blank" rel="noopener noreferrer">emscripten.org</a></li>
+                <li><strong>js-dos:</strong> DOS emulator for browsers - <a href="https://js-dos.com/" target="_blank" rel="noopener noreferrer">js-dos.com</a></li>
+                <li><strong>DOOM Shareware:</strong> Original freely distributable version used in this project</li>
+                <li><strong>DOSBox:</strong> DOS emulation project - <a href="https://www.dosbox.com/" target="_blank" rel="noopener noreferrer">dosbox.com</a></li>
                 <li><strong>DOOM Wiki:</strong> Comprehensive DOOM knowledge base - <a href="https://doomwiki.org/" target="_blank" rel="noopener noreferrer">doomwiki.org</a></li>
             </ul>
         </section>
         
         <div class="cta-container">
+            <a href="/project-DOOMbr/docs/" class="cta-button cta-button-primary">
+                🎮 PLAY NOW
+            </a>
             <a href="https://github.com/islamMendjel/project-DOOMbr" class="cta-button" target="_blank" rel="noopener noreferrer">
                 📦 View on GitHub
             </a>
