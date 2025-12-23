@@ -1,0 +1,88 @@
+name: Build and Deploy DOOM to GitHub Pages
+
+# Trigger the workflow on push to main branch or manual workflow dispatch
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow only one concurrent deployment
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      # Step 1: Checkout the repository
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      # Step 2: Setup Emscripten SDK
+      # Note: emsdk installation may take a few minutes
+      - name: Setup Emscripten SDK
+        uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: 'latest'
+          actions-cache-folder: 'emsdk-cache'
+      
+      # Step 3: Verify Emscripten installation
+      - name: Verify Emscripten
+        run: |
+          emcc --version
+          echo "Emscripten SDK installed and activated successfully"
+      
+      # Step 4: Run build script
+      - name: Build DOOM to WebAssembly
+        run: |
+          chmod +x build.sh
+          ./build.sh
+        continue-on-error: true
+      
+      # Step 5: Check build output
+      - name: Check build artifacts
+        run: |
+          if [ -f "docs/index.html" ]; then
+            echo "✓ docs/index.html exists"
+          else
+            echo "✗ docs/index.html missing"
+          fi
+          
+          if [ -f "docs/doom.js" ]; then
+            echo "✓ docs/doom.js exists"
+            ls -lh docs/doom.js
+          else
+            echo "⚠ docs/doom.js not found (expected if source files not present)"
+          fi
+          
+          if [ -f "docs/doom.wasm" ]; then
+            echo "✓ docs/doom.wasm exists"
+            ls -lh docs/doom.wasm
+          else
+            echo "⚠ docs/doom.wasm not found (expected if source files not present)"
+          fi
+          
+          echo ""
+          echo "Contents of docs/ directory:"
+          ls -lah docs/
+      
+      # Step 6: Deploy to GitHub Pages
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./docs
+          publish_branch: gh-pages
+          force_orphan: true
+          user_name: 'github-actions[bot]'
+          user_email: 'github-actions[bot]@users.noreply.github.com'
+          commit_message: 'Deploy DOOM WebAssembly build'

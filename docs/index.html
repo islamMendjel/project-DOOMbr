@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DOOM - WebAssembly</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background: #000;
+            color: #0f0;
+            font-family: 'Courier New', monospace;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+        #overlay {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px 30px;
+            border: 2px solid #0f0;
+            border-radius: 5px;
+            text-align: center;
+            z-index: 100;
+            max-width: 90%;
+        }
+        #overlay h1 {
+            margin-bottom: 10px;
+            font-size: 24px;
+        }
+        #status {
+            margin: 10px 0;
+            font-size: 14px;
+        }
+        #error {
+            color: #f00;
+            margin-top: 10px;
+            display: none;
+        }
+        #canvas {
+            border: 2px solid #0f0;
+            cursor: pointer;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+        }
+        .hidden {
+            display: none !important;
+        }
+        #instructions {
+            margin-top: 10px;
+            font-size: 12px;
+            color: #888;
+        }
+    </style>
+</head>
+<body>
+    <div id="overlay">
+        <h1>DOOM WebAssembly</h1>
+        <div id="status">Loading...</div>
+        <div id="error"></div>
+        <div id="instructions">Click on the canvas to start and enable pointer lock</div>
+    </div>
+    <canvas id="canvas" width="640" height="480"></canvas>
+
+    <script>
+        const statusElement = document.getElementById('status');
+        const errorElement = document.getElementById('error');
+        const overlayElement = document.getElementById('overlay');
+        const canvasElement = document.getElementById('canvas');
+
+        // Show error message
+        function showError(message) {
+            errorElement.textContent = message;
+            errorElement.style.display = 'block';
+            statusElement.textContent = 'Error occurred';
+        }
+
+        // Update status message
+        function updateStatus(message) {
+            statusElement.textContent = message;
+        }
+
+        // Setup pointer lock
+        canvasElement.addEventListener('click', function() {
+            canvasElement.requestPointerLock = canvasElement.requestPointerLock ||
+                                               canvasElement.mozRequestPointerLock ||
+                                               canvasElement.webkitRequestPointerLock;
+            if (canvasElement.requestPointerLock) {
+                canvasElement.requestPointerLock();
+            }
+        });
+
+        // Handle pointer lock changes
+        document.addEventListener('pointerlockchange', lockChangeAlert, false);
+        document.addEventListener('mozpointerlockchange', lockChangeAlert, false);
+        document.addEventListener('webkitpointerlockchange', lockChangeAlert, false);
+
+        function lockChangeAlert() {
+            if (document.pointerLockElement === canvasElement ||
+                document.mozPointerLockElement === canvasElement ||
+                document.webkitPointerLockElement === canvasElement) {
+                console.log('Pointer locked');
+            } else {
+                console.log('Pointer unlocked');
+            }
+        }
+
+        // Emscripten Module configuration
+        var Module = {
+            canvas: canvasElement,
+            print: function(text) {
+                console.log('[stdout]', text);
+            },
+            printErr: function(text) {
+                console.error('[stderr]', text);
+            },
+            setStatus: function(text) {
+                if (text) {
+                    updateStatus(text);
+                } else {
+                    // Game has started, hide overlay after a short delay
+                    setTimeout(function() {
+                        overlayElement.classList.add('hidden');
+                    }, 2000);
+                }
+            },
+            onRuntimeInitialized: function() {
+                updateStatus('Runtime initialized - Ready to play!');
+            },
+            onAbort: function(what) {
+                showError('Aborted: ' + what);
+            }
+        };
+
+        // Load the Emscripten-generated JavaScript
+        updateStatus('Loading DOOM engine...');
+        
+        const script = document.createElement('script');
+        script.src = './doom.js';
+        script.onerror = function() {
+            showError('Failed to load doom.js. Make sure the WebAssembly build files are present in the docs/ directory.');
+        };
+        script.onload = function() {
+            updateStatus('DOOM engine loaded - Initializing...');
+        };
+        document.body.appendChild(script);
+
+        // Prevent context menu on canvas
+        canvasElement.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+            return false;
+        });
+
+        // Check WebAssembly support
+        if (typeof WebAssembly !== 'object') {
+            showError('Your browser does not support WebAssembly. Please use a modern browser (Chrome, Firefox, Edge, Safari).');
+        }
+    </script>
+</body>
+</html>

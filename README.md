@@ -308,6 +308,75 @@ Feel free to fork this project and submit pull requests for:
 
 ---
 
+## Run in browser / GitHub Pages
+
+This repository includes a WebAssembly build system to compile the DOOM engine and deploy it to GitHub Pages.
+
+### Building DOOM for the Web
+
+**Requirements:**
+- Emscripten SDK (emsdk)
+- DOOM engine source code
+- DOOM WAD file (see licensing note below)
+
+**⚠️ WAD Licensing Note:**
+This repository does NOT include any DOOM WAD files or copyrighted game data. You must provide your own legal WAD file:
+- **Free options**: DOOM Shareware (doom1.wad) or Freedoom (freedoom1.wad, freedoom2.wad)
+- **Commercial**: If you own DOOM, use your purchased WAD files
+- **Placement**: Place your WAD file at `data/doom.wad`
+
+**Build Instructions:**
+
+1. **Install Emscripten SDK:**
+   ```bash
+   git clone https://github.com/emscripten-core/emsdk.git
+   cd emsdk
+   ./emsdk install latest
+   ./emsdk activate latest
+   source ./emsdk_env.sh
+   ```
+
+2. **Add DOOM source code:**
+   - Place DOOM engine source files in your repository (e.g., in `src/` directory)
+   - Update `SOURCE_FILES` and `INCLUDE_DIRS` in `build.sh` to match your layout
+
+3. **Add a WAD file:**
+   ```bash
+   mkdir -p data
+   # Copy your legal WAD file to data/doom.wad
+   cp /path/to/your/doom.wad data/doom.wad
+   ```
+
+4. **Run the build script:**
+   ```bash
+   chmod +x build.sh
+   ./build.sh
+   ```
+
+5. **Test locally:**
+   ```bash
+   python3 -m http.server 8000
+   # Visit http://localhost:8000/docs/
+   ```
+
+6. **Deploy to GitHub Pages:**
+   - Push your changes to the `main` branch
+   - GitHub Actions will automatically build and deploy to GitHub Pages
+   - Your game will be available at: `https://<username>.github.io/<repository>/docs/`
+
+**Automatic Deployment:**
+
+The included GitHub Actions workflow (`.github/workflows/build-and-deploy.yml`) automatically:
+1. Installs Emscripten SDK (may take a few minutes)
+2. Runs the build script
+3. Deploys the `docs/` directory to GitHub Pages using the `gh-pages` branch
+
+The workflow triggers on:
+- Push to `main` branch
+- Manual workflow dispatch from the GitHub Actions tab
+
+---
+
 **Enjoy playing DOOM in your browser! 🎮👾**
 
 For issues or questions, please open an issue on GitHub.
