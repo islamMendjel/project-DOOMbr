@@ -182,7 +182,7 @@
         <p style="margin-top: 10px; color: #666; font-size: 0.85em;">Click inside the game to lock mouse. Press ESC to release.</p>
     </div>
 
-    <!-- js-dos v7 library from unpkg CDN -->
+    <!-- js-dos v6.22 library from unpkg CDN -->
     <script src="https://unpkg.com/js-dos@6.22/dist/js-dos.js"></script>
     
     <script>
@@ -235,8 +235,7 @@
                         // This bundle includes DOOM shareware (1.9) which is freely distributable
                         const bundleUrl = 'https://cdn.dos.zone/original/2X/9/9ed7eb9c2c441f56656692ed4e736ff7ab423744.jsdos';
                         
-                        setStatus('Downloading DOOM Shareware bundle...');
-                        setStatus('This may take 30-60 seconds depending on your connection...');
+                        setStatus('Downloading DOOM Shareware bundle (may take 30-60 seconds)...');
                         
                         // Initialize js-dos with the bundle
                         Dos(root, {
