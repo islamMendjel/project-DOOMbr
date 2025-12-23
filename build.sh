@@ -168,16 +168,13 @@ echo "Building with Emscripten..."
 echo "This may take several minutes..."
 echo ""
 
-# Construct the full emcc command
-EMCC_CMD="emcc $INCLUDES $SOURCE_LIST ${EMCC_FLAGS[@]} $PRELOAD_FLAG -o $OUTPUT_DIR/doom.js"
-
 # Show the command (helpful for debugging)
 echo "Command:"
-echo "  $EMCC_CMD"
+echo "  emcc $INCLUDES $SOURCE_LIST ${EMCC_FLAGS[*]} $PRELOAD_FLAG -o $OUTPUT_DIR/doom.js"
 echo ""
 
-# Execute the build
-if $EMCC_CMD; then
+# Execute the build - use direct command instead of string variable for safety
+if emcc $INCLUDES $SOURCE_LIST "${EMCC_FLAGS[@]}" $PRELOAD_FLAG -o "$OUTPUT_DIR/doom.js"; then
     echo ""
     echo -e "${GREEN}✓ Build successful!${NC}"
     echo ""
