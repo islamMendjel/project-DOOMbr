@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DOOM - WebAssembly</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #000;
+            color: #0f0;
+            font-family: 'Courier New', monospace;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+        #container {
+            text-align: center;
+            max-width: 100%;
+        }
+        #canvas {
+            display: block;
+            margin: 20px auto;
+            border: 2px solid #0f0;
+            cursor: pointer;
+            max-width: 100%;
+            height: auto;
+        }
+        #status {
+            padding: 10px;
+            margin: 10px;
+            background: rgba(0, 255, 0, 0.1);
+            border: 1px solid #0f0;
+            border-radius: 4px;
+        }
+        #overlay {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            border: 2px solid #0f0;
+            padding: 30px;
+            border-radius: 8px;
+            max-width: 80%;
+            z-index: 1000;
+        }
+        #overlay.hidden {
+            display: none;
+        }
+        .button {
+            background: #0f0;
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            margin: 10px;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            font-size: 16px;
+            border-radius: 4px;
+        }
+        .button:hover {
+            background: #0c0;
+        }
+        h1 {
+            margin-top: 0;
+            text-shadow: 2px 2px 4px rgba(0, 255, 0, 0.5);
+        }
+        .error {
+            color: #f00;
+            border-color: #f00;
+        }
+        .info {
+            font-size: 14px;
+            margin-top: 15px;
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+    <div id="overlay">
+        <h1>🎮 DOOM WebAssembly</h1>
+        <div id="status">Loading DOOM engine...</div>
+        <div class="info">
+            <p>Click the canvas to lock pointer and start playing!</p>
+            <p><strong>Controls:</strong> WASD/Arrows - Move | Mouse - Look | Ctrl - Fire | Space - Use</p>
+        </div>
+    </div>
+    <div id="container">
+        <canvas id="canvas" width="640" height="480"></canvas>
+    </div>
+
+    <script type="text/javascript">
+        var Module = {
+            canvas: document.getElementById('canvas'),
+            preRun: [],
+            postRun: [],
+            print: function(text) {
+                console.log(text);
+            },
+            printErr: function(text) {
+                console.error(text);
+            },
+            setStatus: function(text) {
+                var statusElement = document.getElementById('status');
+                if (statusElement) {
+                    if (text) {
+                        statusElement.innerHTML = text;
+                        statusElement.className = '';
+                    } else {
+                        statusElement.innerHTML = 'Ready! Click canvas to start.';
+                    }
+                }
+            },
+            totalDependencies: 0,
+            monitorRunDependencies: function(left) {
+                this.totalDependencies = Math.max(this.totalDependencies, left);
+                Module.setStatus(left ? 'Preparing... (' + (this.totalDependencies-left) + '/' + this.totalDependencies + ')' : 'All downloads complete.');
+            }
+        };
+
+        Module.setStatus('Downloading...');
+
+        window.onerror = function(event) {
+            Module.setStatus('Exception thrown, see JavaScript console');
+        };
+
+        // Request pointer lock on canvas click
+        var canvas = document.getElementById('canvas');
+        canvas.addEventListener('click', function() {
+            canvas.requestPointerLock = canvas.requestPointerLock ||
+                                        canvas.mozRequestPointerLock ||
+                                        canvas.webkitRequestPointerLock;
+            if (canvas.requestPointerLock) {
+                canvas.requestPointerLock();
+            }
+        });
+
+        // Hide overlay after successful load
+        Module.postRun.push(function() {
+            setTimeout(function() {
+                var overlay = document.getElementById('overlay');
+                if (overlay) {
+                    overlay.classList.add('hidden');
+                }
+            }, 2000);
+        });
+
+        // Try to load doom.js
+        (function() {
+            var script = document.createElement('script');
+            script.src = 'doom.js';
+            script.onerror = function() {
+                var statusElement = document.getElementById('status');
+                if (statusElement) {
+                    statusElement.className = 'error';
+                    statusElement.innerHTML = '<strong>Failed to load doom.js</strong><br>' +
+                        'The DOOM WebAssembly files are not present.<br>' +
+                        'Please build the project using build.sh or ensure doom.js and doom.wasm are in the docs/ directory.<br><br>' +
+                        'See README.md for instructions.';
+                }
+                console.error('Failed to load doom.js - file not found or build not complete');
+            };
+            document.body.appendChild(script);
+        })();
+    </script>
+</body>
+</html>

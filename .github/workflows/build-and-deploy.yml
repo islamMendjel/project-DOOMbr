@@ -1,0 +1,67 @@
+name: Build and Deploy DOOM to GitHub Pages
+
+# Trigger the workflow on push to main branch or manual dispatch
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+# Sets permissions for GitHub token
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow only one concurrent deployment
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Setup Emscripten SDK
+        uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: 'latest'
+          actions-cache-folder: 'emsdk-cache'
+      
+      - name: Verify Emscripten installation
+        run: |
+          emcc --version
+          echo "Emscripten is ready!"
+      
+      - name: Build DOOM with Emscripten
+        run: |
+          echo "Running build script..."
+          ./build.sh
+          echo "Build complete!"
+      
+      - name: List build artifacts
+        run: |
+          echo "Contents of docs/ directory:"
+          ls -lah docs/
+      
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./docs
+          publish_branch: gh-pages
+          force_orphan: true
+          user_name: 'github-actions[bot]'
+          user_email: 'github-actions[bot]@users.noreply.github.com'
+          commit_message: 'Deploy DOOM WebAssembly build'
+
+# Notes:
+# - This workflow builds the DOOM engine to WebAssembly using Emscripten
+# - The emsdk installation may take a few minutes on first run (cached afterwards)
+# - Build artifacts are deployed to the gh-pages branch
+# - Ensure GitHub Pages is configured to serve from gh-pages branch in repository settings
+# - The build.sh script will create placeholder files if no source code is present

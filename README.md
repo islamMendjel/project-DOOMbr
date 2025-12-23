@@ -308,6 +308,135 @@ Feel free to fork this project and submit pull requests for:
 
 ---
 
+## Run in Browser / GitHub Pages
+
+This repository can be built to **WebAssembly** and published to GitHub Pages using the provided build workflow. The automated build system compiles the DOOM engine to WebAssembly using Emscripten and deploys it to your GitHub Pages site.
+
+### Automated Build & Deploy
+
+The repository includes a GitHub Actions workflow that automatically builds and deploys the DOOM engine:
+
+1. **Automatic deployment**: Every push to `main` triggers a build and deployment to GitHub Pages
+2. **Manual deployment**: You can also trigger builds manually from the Actions tab
+
+The workflow will:
+- Install and configure Emscripten SDK
+- Run `build.sh` to compile the engine to WebAssembly
+- Deploy the built files from `docs/` to GitHub Pages
+
+### Important: WAD Files
+
+⚠️ **The DOOM WAD file is NOT included** in this repository due to licensing restrictions.
+
+To build a working game, you have two options:
+
+**Option 1: Add a WAD file locally**
+```bash
+# Create data directory and add your WAD file
+mkdir -p data
+cp /path/to/your/doom.wad data/doom.wad
+
+# Run build script locally
+./build.sh
+```
+
+**Option 2: Modify build.sh**
+Edit `build.sh` to fetch a free WAD file (like Freedoom) or adjust the loader to load WADs dynamically.
+
+### Local Build Instructions
+
+To build the WebAssembly version locally:
+
+1. **Install Emscripten SDK**:
+   ```bash
+   # Clone emsdk
+   git clone https://github.com/emscripten-core/emsdk.git
+   cd emsdk
+   
+   # Install and activate latest version
+   ./emsdk install latest
+   ./emsdk activate latest
+   source ./emsdk_env.sh
+   ```
+
+2. **Verify emcc is in PATH**:
+   ```bash
+   emcc --version
+   ```
+
+3. **Add DOOM source code** (if not present):
+   - Place DOOM engine source files in appropriate directory
+   - Update `SOURCE_FILES` and `INCLUDES` variables in `build.sh`
+
+4. **Add a WAD file** (optional):
+   ```bash
+   mkdir -p data
+   cp your-doom.wad data/doom.wad
+   ```
+
+5. **Run the build**:
+   ```bash
+   ./build.sh
+   ```
+
+6. **Test locally**:
+   ```bash
+   cd docs
+   python3 -m http.server 8000
+   # Visit http://localhost:8000
+   ```
+
+### Enabling GitHub Pages
+
+To enable GitHub Pages for this repository:
+
+1. Go to repository **Settings** → **Pages**
+2. Under **Source**, select:
+   - **Deploy from a branch**
+   - Branch: **gh-pages** (created by the workflow)
+   - Folder: **/ (root)**
+3. Click **Save**
+
+Your DOOM game will be available at: `https://<username>.github.io/<repository>/`
+
+### Notes About Large WADs and Git LFS
+
+⚠️ **Large WAD files**: Commercial DOOM WAD files can be 10-20 MB or larger. If you plan to include WAD files in the repository:
+
+- Consider using **Git Large File Storage (LFS)** for WAD files
+- Add WAD files to `.gitignore` and load them dynamically instead
+- Use free alternatives like **Freedoom** which are smaller and open-source
+- Be aware that preloading WADs increases the initial download size for users
+
+Example Git LFS setup:
+```bash
+git lfs install
+git lfs track "*.wad"
+git add .gitattributes
+```
+
+### Customizing the Build
+
+The `build.sh` script uses **placeholder source file patterns** by default. To customize for your DOOM source layout:
+
+1. Edit `build.sh`
+2. Update the `SOURCE_FILES` variable to match your source structure
+3. Update the `INCLUDES` variable to add include directories
+4. Adjust `EMCC_FLAGS` if needed for optimization or features
+
+Example customizations:
+```bash
+# For PrBoom source layout:
+SOURCE_FILES="prboom2/src/*.c prboom2/src/SDL/*.c"
+INCLUDES="-Iprboom2/include -Iprboom2/src"
+
+# For Chocolate DOOM:
+SOURCE_FILES="src/*.c src/doom/*.c"
+INCLUDES="-Isrc -Isrc/doom"
+```
+
+---
+
 **Enjoy playing DOOM in your browser! 🎮👾**
 
 For issues or questions, please open an issue on GitHub.

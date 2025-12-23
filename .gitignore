@@ -40,6 +40,20 @@ build/
 *.o
 *.a
 
+# WebAssembly build outputs (built by build.sh)
+docs/doom.js
+docs/doom.wasm
+docs/doom.data
+
+# WAD files (game data - not included due to licensing)
+*.wad
+*.WAD
+data/*.wad
+data/*.WAD
+
+# Emscripten cache
+emsdk-cache/
+
 # Large binary files that might be added later
 *.wasm.map
 *.data.map
