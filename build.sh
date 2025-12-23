@@ -170,10 +170,12 @@ echo ""
 
 # Show the command (helpful for debugging)
 echo "Command:"
-echo "  emcc $INCLUDES $SOURCE_LIST ${EMCC_FLAGS[*]} $PRELOAD_FLAG -o $OUTPUT_DIR/doom.js"
+echo "  emcc $INCLUDES $SOURCE_LIST ${EMCC_FLAGS[@]} $PRELOAD_FLAG -o $OUTPUT_DIR/doom.js"
 echo ""
 
 # Execute the build - use direct command instead of string variable for safety
+# Note: $INCLUDES and $SOURCE_LIST are intentionally unquoted to allow word splitting
+# They contain space-separated compiler arguments that must be passed as separate arguments
 if emcc $INCLUDES $SOURCE_LIST "${EMCC_FLAGS[@]}" $PRELOAD_FLAG -o "$OUTPUT_DIR/doom.js"; then
     echo ""
     echo -e "${GREEN}✓ Build successful!${NC}"
