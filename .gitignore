@@ -44,6 +44,21 @@ build/
 *.wasm.map
 *.data.map
 
+# Emscripten build artifacts
+# Note: docs/ directory is intentionally NOT ignored as it contains
+# deployment artifacts for GitHub Pages
+*.bc
+*.out
+
+# WAD files (game data - not included due to licensing)
+# Uncomment if you want to exclude WADs from the repository:
+# *.wad
+# data/*.wad
+
+# Emscripten SDK cache (if building locally)
+emsdk/
+emsdk-cache/
+
 # Environment files
 .env
 .env.local

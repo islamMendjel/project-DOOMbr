@@ -1,0 +1,100 @@
+name: Build and Deploy DOOM to GitHub Pages
+
+# This workflow builds the DOOM engine to WebAssembly using Emscripten
+# and deploys the result to GitHub Pages.
+#
+# Triggers:
+#   - Push to main branch
+#   - Manual workflow dispatch (via GitHub Actions UI)
+#
+# Note: emsdk installation may take a few minutes on first run.
+# Subsequent runs will use cached emsdk files.
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:  # Allow manual triggering
+
+# Required for GitHub Pages deployment
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  build-and-deploy:
+    name: Build DOOM WebAssembly and Deploy
+    runs-on: ubuntu-latest
+    
+    steps:
+      # Step 1: Check out the repository
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for better git operations
+      
+      # Step 2: Install Emscripten SDK
+      # This step may take a few minutes on first run
+      # The emsdk cache helps speed up subsequent builds
+      - name: Setup Emscripten SDK
+        uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: 'latest'
+          actions-cache-folder: 'emsdk-cache'
+      
+      # Step 3: Verify Emscripten installation
+      - name: Verify emcc installation
+        run: |
+          emcc --version
+          echo "Emscripten SDK installed successfully"
+      
+      # Step 4: Run the build script
+      # This compiles DOOM source to WebAssembly
+      # The script will warn if source files or WAD are missing
+      - name: Build DOOM to WebAssembly
+        run: |
+          chmod +x ./build.sh
+          ./build.sh
+        continue-on-error: false
+      
+      # Step 5: List generated files for verification
+      - name: Verify build output
+        run: |
+          echo "Build artifacts:"
+          ls -lh docs/
+          echo ""
+          echo "Checking for required files..."
+          test -f docs/doom.js && echo "✓ doom.js exists" || echo "✗ doom.js missing"
+          test -f docs/doom.wasm && echo "✓ doom.wasm exists" || echo "✗ doom.wasm missing"
+          test -f docs/index.html && echo "✓ index.html exists" || echo "✗ index.html missing"
+      
+      # Step 6: Deploy to GitHub Pages
+      # Uses the peaceiris/actions-gh-pages action with GITHUB_TOKEN
+      # This pushes the docs/ directory to the gh-pages branch
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./docs
+          publish_branch: gh-pages
+          force_orphan: true  # Keep gh-pages branch clean
+          user_name: 'github-actions[bot]'
+          user_email: 'github-actions[bot]@users.noreply.github.com'
+          commit_message: 'Deploy DOOM WebAssembly to GitHub Pages'
+      
+      # Step 7: Output deployment URL
+      - name: Output deployment info
+        run: |
+          echo "========================================="
+          echo "Deployment complete!"
+          echo "========================================="
+          echo ""
+          echo "Your DOOM WebAssembly build has been deployed to GitHub Pages."
+          echo ""
+          echo "Repository: ${{ github.repository }}"
+          echo "Deployment URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/"
+          echo ""
+          echo "Note: It may take a few minutes for GitHub Pages to update."
+          echo "      Check the Pages settings if the site doesn't appear."
+          echo ""
