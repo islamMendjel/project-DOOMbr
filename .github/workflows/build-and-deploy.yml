@@ -42,6 +42,8 @@ jobs:
           echo "Emscripten SDK installed and activated successfully"
       
       # Step 4: Run build script
+      # Note: Build may fail if source files aren't present yet (this is expected for initial setup)
+      # The index.html will still be deployed, ready for when build files are added later
       - name: Build DOOM to WebAssembly
         run: |
           chmod +x build.sh
