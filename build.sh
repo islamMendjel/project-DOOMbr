@@ -86,7 +86,6 @@ EMCC_FLAGS=(
     -s USE_SDL=2                          # Use SDL2 (Emscripten provides this)
     -s INITIAL_MEMORY=64MB                # Initial memory allocation
     -s STACK_SIZE=5MB                     # Stack size
-    --shell-file shell_minimal.html       # Optional: custom HTML shell
     -lidbfs.js                            # IndexedDB filesystem support
 )
 

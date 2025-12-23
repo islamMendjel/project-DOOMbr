@@ -110,10 +110,10 @@
                 var statusElement = document.getElementById('status');
                 if (statusElement) {
                     if (text) {
-                        statusElement.innerHTML = text;
+                        statusElement.textContent = text;
                         statusElement.className = '';
                     } else {
-                        statusElement.innerHTML = 'Ready! Click canvas to start.';
+                        statusElement.textContent = 'Ready! Click canvas to start.';
                     }
                 }
             },
@@ -159,10 +159,18 @@
                 var statusElement = document.getElementById('status');
                 if (statusElement) {
                     statusElement.className = 'error';
-                    statusElement.innerHTML = '<strong>Failed to load doom.js</strong><br>' +
-                        'The DOOM WebAssembly files are not present.<br>' +
-                        'Please build the project using build.sh or ensure doom.js and doom.wasm are in the docs/ directory.<br><br>' +
-                        'See README.md for instructions.';
+                    // Use DOM manipulation for better security
+                    statusElement.innerHTML = '';
+                    var strong = document.createElement('strong');
+                    strong.textContent = 'Failed to load doom.js';
+                    statusElement.appendChild(strong);
+                    statusElement.appendChild(document.createElement('br'));
+                    statusElement.appendChild(document.createTextNode('The DOOM WebAssembly files are not present.'));
+                    statusElement.appendChild(document.createElement('br'));
+                    statusElement.appendChild(document.createTextNode('Please build the project using build.sh or ensure doom.js and doom.wasm are in the docs/ directory.'));
+                    statusElement.appendChild(document.createElement('br'));
+                    statusElement.appendChild(document.createElement('br'));
+                    statusElement.appendChild(document.createTextNode('See README.md for instructions.'));
                 }
                 console.error('Failed to load doom.js - file not found or build not complete');
             };
