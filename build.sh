@@ -126,6 +126,10 @@ fi
 echo ""
 echo "Searching for source files..."
 SOURCE_LIST=""
+
+# Enable nullglob to handle patterns that don't match any files
+shopt -s nullglob
+
 for pattern in $SOURCE_FILES; do
     # Use shell globbing to find files
     for file in $pattern; do
@@ -134,6 +138,9 @@ for pattern in $SOURCE_FILES; do
         fi
     done
 done
+
+# Disable nullglob to restore default behavior
+shopt -u nullglob
 
 if [ -z "$SOURCE_LIST" ]; then
     echo -e "${YELLOW}⚠ No source files found matching pattern:${NC} $SOURCE_FILES"
