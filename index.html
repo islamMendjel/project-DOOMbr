@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Play DOOM Shareware v1.9 in your browser using js-dos emulator">
+    <title>DOOM - Play in Browser</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background: linear-gradient(to bottom, #0a0a0a 0%, #1a0000 100%);
+            color: #fff;
+            font-family: 'Courier New', monospace;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        #header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        #header h1 {
+            font-size: 3em;
+            color: #ff0000;
+            text-shadow: 0 0 20px #ff0000, 0 0 40px #ff0000;
+            letter-spacing: 10px;
+            margin-bottom: 10px;
+        }
+        #header p {
+            color: #aaa;
+            font-size: 1.1em;
+        }
+        #game-container {
+            width: 100%;
+            max-width: 900px;
+            aspect-ratio: 4/3;
+            border: 3px solid #a00;
+            box-shadow: 0 0 30px rgba(170, 0, 0, 0.5);
+            background: #000;
+            position: relative;
+            margin-bottom: 20px;
+        }
+        #jsdos {
+            width: 100%;
+            height: 100%;
+        }
+        #loading-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 1000;
+            transition: opacity 0.5s;
+        }
+        #loading-screen.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        .loader {
+            border: 4px solid #333;
+            border-top: 4px solid #f00;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        #status {
+            color: #0f0;
+            font-size: 1.1em;
+            margin: 10px 0;
+            text-align: center;
+            padding: 0 20px;
+            max-width: 80%;
+        }
+        #start-button {
+            margin-top: 20px;
+            padding: 15px 40px;
+            font-size: 1.2em;
+            font-family: 'Courier New', monospace;
+            background: #a00;
+            color: #fff;
+            border: 2px solid #f00;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            transition: all 0.3s;
+            display: none;
+        }
+        #start-button:hover:not(:disabled) {
+            background: #f00;
+            box-shadow: 0 0 20px #f00;
+            transform: scale(1.05);
+        }
+        #start-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        #start-button.visible {
+            display: block;
+        }
+        #controls {
+            text-align: center;
+            color: #888;
+            font-size: 0.9em;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px 30px;
+            border-radius: 5px;
+            border: 1px solid #a00;
+            max-width: 900px;
+        }
+        #controls h3 {
+            color: #f00;
+            margin-bottom: 10px;
+        }
+        #controls p {
+            margin: 5px 0;
+        }
+        #error-message {
+            color: #f00;
+            background: rgba(50, 0, 0, 0.8);
+            padding: 20px;
+            border: 2px solid #a00;
+            border-radius: 5px;
+            max-width: 600px;
+            text-align: center;
+            display: none;
+            line-height: 1.6;
+        }
+        #error-message.visible {
+            display: block;
+        }
+        @media (max-width: 768px) {
+            #header h1 {
+                font-size: 2em;
+                letter-spacing: 5px;
+            }
+            #controls {
+                font-size: 0.8em;
+                padding: 10px 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="header">
+        <h1>DOOM</h1>
+        <p>Powered by js-dos | DOOM Shareware v1.9</p>
+    </div>
+
+    <div id="game-container">
+        <div id="jsdos"></div>
+        <div id="loading-screen">
+            <div class="loader"></div>
+            <div id="status">Initializing DOOM...</div>
+            <button id="start-button">Start Game</button>
+            <div id="error-message"></div>
+        </div>
+    </div>
+
+    <div id="controls">
+        <h3>Controls</h3>
+        <p><strong>Arrow Keys:</strong> Move | <strong>Ctrl:</strong> Fire | <strong>Space:</strong> Use/Open Doors</p>
+        <p><strong>Alt:</strong> Strafe | <strong>Shift:</strong> Run | <strong>1-7:</strong> Select Weapon | <strong>ESC:</strong> Menu</p>
+        <p style="margin-top: 10px; color: #666; font-size: 0.85em;">Click inside the game to lock mouse. Press ESC to release.</p>
+    </div>
+
+    <!-- js-dos v6.22 library from unpkg CDN -->
+    <script src="https://unpkg.com/js-dos@6.22/dist/js-dos.js"></script>
+    
+    <script>
+        const statusEl = document.getElementById('status');
+        const loadingScreen = document.getElementById('loading-screen');
+        const startButton = document.getElementById('start-button');
+        const errorMessage = document.getElementById('error-message');
+
+        function setStatus(message) {
+            console.log('[Status]', message);
+            statusEl.textContent = message;
+        }
+
+        function showError(message) {
+            console.error('[Error]', message);
+            errorMessage.innerHTML = message;
+            errorMessage.classList.add('visible');
+            document.querySelector('.loader').style.display = 'none';
+        }
+
+        function hideLoading() {
+            setTimeout(() => {
+                loadingScreen.classList.add('hidden');
+            }, 1500);
+        }
+
+        // Helper: fetch with timeout
+        async function fetchWithTimeout(url, timeoutMs = 30000) {
+            const controller = new AbortController();
+            const id = setTimeout(() => controller.abort(), timeoutMs);
+            try {
+                const resp = await fetch(url, { signal: controller.signal });
+                clearTimeout(id);
+                if (!resp.ok) {
+                    throw new Error(`Network error: ${resp.status} ${resp.statusText}`);
+                }
+                return resp.arrayBuffer();
+            } catch (err) {
+                clearTimeout(id);
+                if (err.name === 'AbortError') {
+                    throw new Error(`Request timeout after ${timeoutMs / 1000}s`);
+                }
+                throw err;
+            }
+        }
+
+        // Initialize js-dos v6.22
+        setStatus('Loading DOOM emulator...');
+
+        // Check if js-dos loaded
+        window.addEventListener('load', function() {
+            if (typeof Dos === 'undefined') {
+                showError('Failed to load js-dos library. Please check your internet connection and refresh the page.');
+            } else {
+                setStatus('Emulator loaded. Click "Start Game" to begin!');
+                startButton.classList.add('visible');
+                document.querySelector('.loader').style.display = 'none';
+
+                startButton.onclick = async () => {
+                    try {
+                        startButton.disabled = true;
+                        startButton.textContent = 'Loading...';
+                        document.querySelector('.loader').style.display = 'block';
+                        
+                        setStatus('Initializing DOS environment...');
+
+                        const root = document.getElementById('jsdos');
+                        
+                        // Prefer local bundle (same-origin), fallback to remote if local not available
+                        const localBundle = './doom.jsdos';
+                        const remoteBundle = 'https://cdn.dos.zone/original/2X/9/9ed7eb9c2c441f56656692ed4e736ff7ab423744.jsdos';
+                        
+                        setStatus('Downloading DOOM Shareware bundle (may take 30-60 seconds)...');
+
+                        // Initialize js-dos with the bundle
+                        Dos(root, {
+                            wdosboxUrl: "https://unpkg.com/js-dos@6.22/dist/wdosbox.js",
+                        }).ready(async (fs, main) => {
+                            try {
+                                async function loadAndExtract(url, timeoutMs) {
+                                    setStatus(`Fetching bundle: ${url}`);
+                                    const ab = await fetchWithTimeout(url, timeoutMs);
+                                    setStatus('Extracting bundle into emulator...');
+                                    await fs.extract(new Uint8Array(ab));
+                                }
+
+                                // Try local first (shorter timeout), then remote
+                                try {
+                                    setStatus('Attempting to load local bundle (./doom.jsdos)...');
+                                    await loadAndExtract(localBundle, 15000);
+                                } catch (localErr) {
+                                    console.warn('Local bundle failed:', localErr);
+                                    setStatus('Local bundle not available or failed — trying remote CDN...');
+                                    await loadAndExtract(remoteBundle, 30000);
+                                }
+
+                                setStatus('Starting DOOM Shareware...');
+                                await main(["-c", "DOOM.EXE"]);
+                                setStatus('DOOM is running! Click inside to play.');
+                                hideLoading();
+                            } catch (err) {
+                                console.error('Bundle load/extract error:', err);
+                                throw err;
+                            }
+                        });
+                        
+                    } catch (error) {
+                        console.error('Error starting game:', error);
+                        showError(
+                            `<strong>Unable to start DOOM</strong><br><br>` +
+                            `Error: ${error.message || error}<br><br>` +
+                            `<span style="color: #aaa; font-size: 0.9em;">` +
+                            `Possible causes:<br>` +
+                            `• The local bundle (./doom.jsdos) is missing or unreadable<br>` +
+                            `• The remote CDN is unreachable or blocked by CORS<br>` +
+                            `• Network connectivity issues or request timeout<br><br>` +
+                            `Try refreshing the page. If the problem persists, check if doom.jsdos is present in the docs/ directory.` +
+                            `</span>`
+                        );
+                        startButton.disabled = false;
+                        startButton.textContent = 'Try Again';
+                    }
+                };
+            }
+        });
+    </script>
+
+    <noscript>
+        <div style="color: #f00; text-align: center; padding: 50px;">
+            <h2>JavaScript Required</h2>
+            <p>Please enable JavaScript to play DOOM in your browser.</p>
+        </div>
+    </noscript>
+</body>
+</html>
