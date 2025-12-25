@@ -209,6 +209,32 @@
             }, 1500);
         }
 
+        // Timeout for bundle downloads (90 seconds)
+        const BUNDLE_FETCH_TIMEOUT_MS = 90000;
+
+        // Fetch with timeout helper function
+        async function fetchWithTimeout(url, timeoutMs = BUNDLE_FETCH_TIMEOUT_MS) {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+            
+            try {
+                const response = await fetch(url, { signal: controller.signal });
+                clearTimeout(timeoutId);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                return await response.arrayBuffer();
+            } catch (error) {
+                clearTimeout(timeoutId);
+                if (error.name === 'AbortError') {
+                    throw new Error(`Request timed out after ${timeoutMs / 1000} seconds. Please check your internet connection and try again.`);
+                }
+                throw error;
+            }
+        }
+
         // Initialize js-dos v6.22
         setStatus('Loading DOOM emulator...');
 
@@ -237,14 +263,23 @@
                         
                         setStatus('Downloading DOOM Shareware bundle (may take 30-60 seconds)...');
                         
+                        // Fetch bundle with timeout
+                        const bundleData = await fetchWithTimeout(bundleUrl);
+                        
+                        setStatus('Bundle downloaded. Initializing DOS environment...');
+                        
                         // Initialize js-dos with the bundle
                         Dos(root, {
                             wdosboxUrl: "https://unpkg.com/js-dos@6.22/dist/wdosbox.js",
                         }).ready((fs, main) => {
                             setStatus('Loading DOOM bundle...');
                             
+                            // Create a blob from the fetched data
+                            const blob = new Blob([bundleData], { type: 'application/octet-stream' });
+                            const blobUrl = URL.createObjectURL(blob);
+                            
                             // Load the bundle and start the game
-                            fs.extract(bundleUrl).then(() => {
+                            fs.extract(blobUrl).then(() => {
                                 setStatus('Starting DOOM Shareware...');
                                 
                                 main(["-c", "DOOM.EXE"]).then((ci) => {
@@ -255,6 +290,8 @@
                                 });
                             }).catch((error) => {
                                 throw error;
+                            }).finally(() => {
+                                URL.revokeObjectURL(blobUrl);
                             });
                         }).catch((error) => {
                             throw error;
@@ -269,7 +306,8 @@
                             `The DOOM bundle could not be loaded. This may be due to:<br>` +
                             `• Network connectivity issues<br>` +
                             `• Browser security restrictions<br>` +
-                            `• CDN availability<br><br>` +
+                            `• CDN availability<br>` +
+                            `• Request timeout (bundle download took too long)<br><br>` +
                             `Please try refreshing the page or check your internet connection.<br><br>` +
                             `<strong>Note:</strong> This uses DOOM Shareware v1.9, which is freely distributable.` +
                             `</span>`
