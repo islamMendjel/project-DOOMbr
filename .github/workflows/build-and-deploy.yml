@@ -39,7 +39,15 @@ jobs:
           ./build.sh
         continue-on-error: false
       
-      # Step 3: List generated files for verification
+      # Step 3: Download DOOM .jsdos bundle
+      # This downloads the js-dos bundle to docs/ for local same-origin loading
+      - name: Download DOOM .jsdos bundle
+        run: |
+          # ensure docs folder exists
+          mkdir -p docs
+          curl -L -o docs/doom.jsdos "https://cdn.dos.zone/original/2X/9/9ed7eb9c2c441f56656692ed4e736ff7ab423744.jsdos"
+      
+      # Step 4: List generated files for verification
       - name: Verify build output
         run: |
           echo "Build artifacts:"
@@ -48,13 +56,18 @@ jobs:
           echo "Checking for required files..."
           test -f docs/index.html && echo "✓ index.html exists" || echo "✗ index.html missing"
           test -f docs/freedoom1.wad && echo "✓ freedoom1.wad exists" || echo "✗ freedoom1.wad missing"
+          test -f docs/doom.jsdos && echo "✓ doom.jsdos exists" || echo "✗ doom.jsdos missing"
           echo ""
           if [ -f docs/freedoom1.wad ]; then
             WAD_SIZE=$(du -h docs/freedoom1.wad | cut -f1)
             echo "WAD file size: ${WAD_SIZE}"
           fi
+          if [ -f docs/doom.jsdos ]; then
+            JSDOS_SIZE=$(du -h docs/doom.jsdos | cut -f1)
+            echo "JSDOS bundle size: ${JSDOS_SIZE}"
+          fi
       
-      # Step 4: Deploy to GitHub Pages
+      # Step 5: Deploy to GitHub Pages
       # Uses the peaceiris/actions-gh-pages action with GITHUB_TOKEN
       # This pushes the docs/ directory to the gh-pages branch
       - name: Deploy to GitHub Pages
@@ -68,7 +81,7 @@ jobs:
           user_email: 'github-actions[bot]@users.noreply.github.com'
           commit_message: 'Deploy DOOM to GitHub Pages'
       
-      # Step 5: Output deployment URL
+      # Step 6: Output deployment URL
       - name: Output deployment info
         run: |
           echo "========================================="
