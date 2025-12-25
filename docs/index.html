@@ -209,29 +209,23 @@
             }, 1500);
         }
 
-        // Timeout for bundle downloads (90 seconds)
-        const BUNDLE_FETCH_TIMEOUT_MS = 90000;
-
-        // Fetch with timeout helper function
-        async function fetchWithTimeout(url, timeoutMs = BUNDLE_FETCH_TIMEOUT_MS) {
+        // Helper: fetch with timeout
+        async function fetchWithTimeout(url, timeoutMs = 30000) {
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-            
+            const id = setTimeout(() => controller.abort(), timeoutMs);
             try {
-                const response = await fetch(url, { signal: controller.signal });
-                clearTimeout(timeoutId);
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                const resp = await fetch(url, { signal: controller.signal, mode: 'cors' });
+                clearTimeout(id);
+                if (!resp.ok) {
+                    throw new Error(`Network error: ${resp.status} ${resp.statusText}`);
                 }
-                
-                return await response.arrayBuffer();
-            } catch (error) {
-                clearTimeout(timeoutId);
-                if (error.name === 'AbortError') {
-                    throw new Error(`Request timed out after ${timeoutMs / 1000} seconds. Please check your internet connection and try again.`);
+                return resp.arrayBuffer();
+            } catch (err) {
+                clearTimeout(id);
+                if (err.name === 'AbortError') {
+                    throw new Error(`Request timeout after ${timeoutMs / 1000}s`);
                 }
-                throw error;
+                throw err;
             }
         }
 
@@ -257,59 +251,55 @@
 
                         const root = document.getElementById('jsdos');
                         
-                        // Use a publicly available DOOM shareware bundle
-                        // This bundle includes DOOM shareware (1.9) which is freely distributable
-                        const bundleUrl = 'https://cdn.dos.zone/original/2X/9/9ed7eb9c2c441f56656692ed4e736ff7ab423744.jsdos';
+                        // Prefer local bundle (same-origin), fallback to remote if local not available
+                        const localBundle = './doom.jsdos';
+                        const remoteBundle = 'https://cdn.dos.zone/original/2X/9/9ed7eb9c2c441f56656692ed4e736ff7ab423744.jsdos';
                         
                         setStatus('Downloading DOOM Shareware bundle (may take 30-60 seconds)...');
-                        
-                        // Fetch bundle with timeout
-                        const bundleData = await fetchWithTimeout(bundleUrl);
-                        
-                        setStatus('Bundle downloaded. Initializing DOS environment...');
-                        
+
                         // Initialize js-dos with the bundle
                         Dos(root, {
                             wdosboxUrl: "https://unpkg.com/js-dos@6.22/dist/wdosbox.js",
-                        }).ready((fs, main) => {
-                            setStatus('Loading DOOM bundle...');
-                            
-                            // Create a blob from the fetched data
-                            const blob = new Blob([bundleData], { type: 'application/octet-stream' });
-                            const blobUrl = URL.createObjectURL(blob);
-                            
-                            // Load the bundle and start the game
-                            fs.extract(blobUrl).then(() => {
+                        }).ready(async (fs, main) => {
+                            try {
+                                async function loadAndExtract(url, timeoutMs) {
+                                    setStatus(`Fetching bundle: ${url}`);
+                                    const ab = await fetchWithTimeout(url, timeoutMs);
+                                    setStatus('Extracting bundle into emulator...');
+                                    await fs.extract(new Uint8Array(ab));
+                                }
+
+                                // Try local first (shorter timeout), then remote
+                                try {
+                                    setStatus('Attempting to load local bundle (docs/doom.jsdos)...');
+                                    await loadAndExtract(localBundle, 15000);
+                                } catch (localErr) {
+                                    console.warn('Local bundle failed:', localErr);
+                                    setStatus('Local bundle not available or failed — trying remote CDN...');
+                                    await loadAndExtract(remoteBundle, 30000);
+                                }
+
                                 setStatus('Starting DOOM Shareware...');
-                                
-                                main(["-c", "DOOM.EXE"]).then((ci) => {
-                                    setStatus('DOOM is running! Click inside to play.');
-                                    hideLoading();
-                                }).catch((error) => {
-                                    throw error;
-                                });
-                            }).catch((error) => {
-                                throw error;
-                            }).finally(() => {
-                                URL.revokeObjectURL(blobUrl);
-                            });
-                        }).catch((error) => {
-                            throw error;
+                                await main(["-c", "DOOM.EXE"]);
+                                setStatus('DOOM is running! Click inside to play.');
+                                hideLoading();
+                            } catch (err) {
+                                console.error('Bundle load/extract error:', err);
+                                throw err;
+                            }
                         });
                         
                     } catch (error) {
                         console.error('Error starting game:', error);
                         showError(
                             `<strong>Unable to start DOOM</strong><br><br>` +
-                            `Error: ${error.message}<br><br>` +
+                            `Error: ${error.message || error}<br><br>` +
                             `<span style="color: #aaa; font-size: 0.9em;">` +
-                            `The DOOM bundle could not be loaded. This may be due to:<br>` +
-                            `• Network connectivity issues<br>` +
-                            `• Browser security restrictions<br>` +
-                            `• CDN availability<br>` +
-                            `• Request timeout (bundle download took too long)<br><br>` +
-                            `Please try refreshing the page or check your internet connection.<br><br>` +
-                            `<strong>Note:</strong> This uses DOOM Shareware v1.9, which is freely distributable.` +
+                            `Possible causes:<br>` +
+                            `• The local bundle (docs/doom.jsdos) is missing or unreadable<br>` +
+                            `• The remote CDN is unreachable or blocked by CORS<br>` +
+                            `• Network connectivity issues or request timeout<br><br>` +
+                            `Try refreshing the page. If the problem persists, download the bundle locally to docs/doom.jsdos as described in the repository instructions.` +
                             `</span>`
                         );
                         startButton.disabled = false;
