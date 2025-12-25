@@ -280,7 +280,6 @@
                             
                             // Load the bundle and start the game
                             fs.extract(blobUrl).then(() => {
-                                URL.revokeObjectURL(blobUrl);
                                 setStatus('Starting DOOM Shareware...');
                                 
                                 main(["-c", "DOOM.EXE"]).then((ci) => {
@@ -290,8 +289,9 @@
                                     throw error;
                                 });
                             }).catch((error) => {
-                                URL.revokeObjectURL(blobUrl);
                                 throw error;
+                            }).finally(() => {
+                                URL.revokeObjectURL(blobUrl);
                             });
                         }).catch((error) => {
                             throw error;
