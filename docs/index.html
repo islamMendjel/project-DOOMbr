@@ -209,8 +209,11 @@
             }, 1500);
         }
 
+        // Timeout for bundle downloads (90 seconds)
+        const BUNDLE_FETCH_TIMEOUT_MS = 90000;
+
         // Fetch with timeout helper function
-        async function fetchWithTimeout(url, timeoutMs = 90000) {
+        async function fetchWithTimeout(url, timeoutMs = BUNDLE_FETCH_TIMEOUT_MS) {
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
             
@@ -226,7 +229,7 @@
             } catch (error) {
                 clearTimeout(timeoutId);
                 if (error.name === 'AbortError') {
-                    throw new Error('Request timed out after ' + (timeoutMs / 1000) + ' seconds. Please check your internet connection and try again.');
+                    throw new Error(`Request timed out after ${timeoutMs / 1000} seconds. Please check your internet connection and try again.`);
                 }
                 throw error;
             }
@@ -260,8 +263,8 @@
                         
                         setStatus('Downloading DOOM Shareware bundle (may take 30-60 seconds)...');
                         
-                        // Fetch bundle with 90 second timeout
-                        const bundleData = await fetchWithTimeout(bundleUrl, 90000);
+                        // Fetch bundle with timeout
+                        const bundleData = await fetchWithTimeout(bundleUrl);
                         
                         setStatus('Bundle downloaded. Initializing DOS environment...');
                         
