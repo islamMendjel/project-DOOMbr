@@ -214,7 +214,7 @@
             const controller = new AbortController();
             const id = setTimeout(() => controller.abort(), timeoutMs);
             try {
-                const resp = await fetch(url, { signal: controller.signal, mode: 'cors' });
+                const resp = await fetch(url, { signal: controller.signal });
                 clearTimeout(id);
                 if (!resp.ok) {
                     throw new Error(`Network error: ${resp.status} ${resp.statusText}`);
@@ -271,7 +271,7 @@
 
                                 // Try local first (shorter timeout), then remote
                                 try {
-                                    setStatus('Attempting to load local bundle (docs/doom.jsdos)...');
+                                    setStatus('Attempting to load local bundle (./doom.jsdos)...');
                                     await loadAndExtract(localBundle, 15000);
                                 } catch (localErr) {
                                     console.warn('Local bundle failed:', localErr);
@@ -296,10 +296,10 @@
                             `Error: ${error.message || error}<br><br>` +
                             `<span style="color: #aaa; font-size: 0.9em;">` +
                             `Possible causes:<br>` +
-                            `• The local bundle (docs/doom.jsdos) is missing or unreadable<br>` +
+                            `• The local bundle (./doom.jsdos) is missing or unreadable<br>` +
                             `• The remote CDN is unreachable or blocked by CORS<br>` +
                             `• Network connectivity issues or request timeout<br><br>` +
-                            `Try refreshing the page. If the problem persists, download the bundle locally to docs/doom.jsdos as described in the repository instructions.` +
+                            `Try refreshing the page. If the problem persists, check if doom.jsdos is present in the docs/ directory.` +
                             `</span>`
                         );
                         startButton.disabled = false;
