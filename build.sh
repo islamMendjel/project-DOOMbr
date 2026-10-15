@@ -1,97 +1,94 @@
-#!/bin/bash
+#!/usr/bin/env bash
 ################################################################################
-# build.sh - Download and prepare DOOM assets for browser-based gameplay
+# build.sh - Download and prepare Freedoom game assets for browser DOOM
 #
-# This script downloads the Freedoom WAD file which is used with js-dos
-# to play DOOM in the browser. No compilation is needed.
-#
-# REQUIREMENTS:
-#   - curl or wget for downloading files
-#   - unzip for extracting archives
-#
-# USAGE:
-#   ./build.sh
-#
-# OUTPUT:
-#   Downloads freedoom1.wad to docs/ directory
-#
+# Idempotently downloads Freedoom v0.13.0, verifies SHA-256 checksums,
+# and extracts freedoom1.wad and freedoom2.wad into docs/wads/
 ################################################################################
 
-set -euo pipefail  # Exit on error, undefined variables, and pipe failures
+set -euo pipefail
 
-echo "========================================="
-echo "DOOM Browser Deployment - Asset Download"
-echo "========================================="
-echo ""
-echo "This script downloads the Freedoom WAD file for use with js-dos."
-echo "No compilation is needed - the game runs directly in the browser!"
-echo ""
+FREEDOOM_VERSION="0.13.0"
+FREEDOOM_ZIP_SHA256="3f9b264f3e3ce503b4fb7f6bdcb1f419d93c7b546f4df3e874dd878db9688f59"
+FREEDOOM1_SHA256="7323bcc168c5a45ff10749b339960e98314740a734c30d4b9f3337001f9e703d"
+FREEDOOM2_SHA256="a8772e088847032510d97ba2312406a6998f21cbab44d4ff10696faa9c0ecd4b"
 
-# Output directory
-OUTPUT_DIR="docs"
-echo "Output directory: ${OUTPUT_DIR}/"
-mkdir -p "${OUTPUT_DIR}"
-
-# Freedoom version
-# Version 0.12.1 released October 2019 - stable and well-tested
-# Check https://github.com/freedoom/freedoom/releases for newer versions
-FREEDOOM_VERSION="0.12.1"
 FREEDOOM_URL="https://github.com/freedoom/freedoom/releases/download/v${FREEDOOM_VERSION}/freedoom-${FREEDOOM_VERSION}.zip"
-TEMP_DIR=$(mktemp -d)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+TARGET_DIR="${SCRIPT_DIR}/docs/wads"
 
-echo "Downloading Freedoom ${FREEDOOM_VERSION}..."
-echo "URL: ${FREEDOOM_URL}"
-echo ""
+echo "========================================="
+echo "DOOM Browser Assets - Freedoom Download"
+echo "========================================="
+echo "Target directory: ${TARGET_DIR}"
 
-# Download Freedoom
-if command -v curl &> /dev/null; then
-    curl -L -o "${TEMP_DIR}/freedoom.zip" "${FREEDOOM_URL}"
-elif command -v wget &> /dev/null; then
-    wget -O "${TEMP_DIR}/freedoom.zip" "${FREEDOOM_URL}"
-else
-    echo "ERROR: Neither curl nor wget is available."
-    echo "Please install curl or wget to download files."
+# Check required commands
+for cmd in curl unzip sha256sum; do
+    if ! command -v "$cmd" >/dev/null 2>&1; then
+        echo "ERROR: Required tool '$cmd' is not installed." >&2
+        echo "Please install $cmd to build/download assets." >&2
+        exit 1
+    fi
+done
+
+mkdir -p "${TARGET_DIR}"
+
+# Verify helper
+check_file_sha256() {
+    local file="$1"
+    local expected="$2"
+    if [[ ! -f "$file" ]]; then
+        return 1
+    fi
+    local actual
+    actual="$(sha256sum "$file" | awk '{print $1}')"
+    [[ "$actual" == "$expected" ]]
+}
+
+# Check if both WADs already exist and match expected checksums
+if check_file_sha256 "${TARGET_DIR}/freedoom1.wad" "${FREEDOOM1_SHA256}" && \
+   check_file_sha256 "${TARGET_DIR}/freedoom2.wad" "${FREEDOOM2_SHA256}"; then
+    echo "✓ Freedoom Phase 1 & 2 WADs already present with verified checksums. Skipping download."
+    exit 0
+fi
+
+TEMP_DIR="$(mktemp -d -t freedoom-build-XXXXXX)"
+cleanup() {
+    rm -rf "${TEMP_DIR}"
+}
+trap cleanup EXIT
+
+ZIP_PATH="${TEMP_DIR}/freedoom-${FREEDOOM_VERSION}.zip"
+
+echo "Downloading Freedoom v${FREEDOOM_VERSION}..."
+curl -fsSL -o "${ZIP_PATH}" "${FREEDOOM_URL}"
+
+echo "Verifying archive SHA-256 checksum..."
+ACTUAL_ZIP_SHA="$(sha256sum "${ZIP_PATH}" | awk '{print $1}')"
+if [[ "${ACTUAL_ZIP_SHA}" != "${FREEDOOM_ZIP_SHA256}" ]]; then
+    echo "ERROR: SHA-256 checksum mismatch for ${ZIP_PATH}!" >&2
+    echo "Expected: ${FREEDOOM_ZIP_SHA256}" >&2
+    echo "Got:      ${ACTUAL_ZIP_SHA}" >&2
+    exit 1
+fi
+echo "✓ Archive checksum verified."
+
+echo "Extracting WADs..."
+unzip -q -j "${ZIP_PATH}" "freedoom-${FREEDOOM_VERSION}/freedoom1.wad" "freedoom-${FREEDOOM_VERSION}/freedoom2.wad" -d "${TARGET_DIR}"
+
+echo "Verifying extracted WAD checksums..."
+if ! check_file_sha256 "${TARGET_DIR}/freedoom1.wad" "${FREEDOOM1_SHA256}"; then
+    echo "ERROR: freedoom1.wad checksum mismatch!" >&2
     exit 1
 fi
 
-echo ""
-echo "Extracting Freedoom WAD file..."
+if ! check_file_sha256 "${TARGET_DIR}/freedoom2.wad" "${FREEDOOM2_SHA256}"; then
+    echo "ERROR: freedoom2.wad checksum mismatch!" >&2
+    exit 1
+fi
 
-# Extract the archive
-unzip -q "${TEMP_DIR}/freedoom.zip" -d "${TEMP_DIR}"
-
-# Copy the WAD file to the output directory
-cp "${TEMP_DIR}/freedoom-${FREEDOOM_VERSION}/freedoom1.wad" "${OUTPUT_DIR}/"
-
-# Get file size
-WAD_SIZE=$(du -h "${OUTPUT_DIR}/freedoom1.wad" | cut -f1)
-
-echo "✓ Freedoom WAD file extracted: ${OUTPUT_DIR}/freedoom1.wad (${WAD_SIZE})"
-
-# Cleanup
-rm -rf "${TEMP_DIR}"
-
-echo ""
 echo "========================================="
-echo "✓ Build completed successfully!"
+echo "✓ Freedoom assets prepared successfully!"
+echo "  - ${TARGET_DIR}/freedoom1.wad ($(du -h "${TARGET_DIR}/freedoom1.wad" | cut -f1))"
+echo "  - ${TARGET_DIR}/freedoom2.wad ($(du -h "${TARGET_DIR}/freedoom2.wad" | cut -f1))"
 echo "========================================="
-echo ""
-echo "Output files:"
-echo "  - ${OUTPUT_DIR}/index.html (DOOM player interface)"
-echo "  - ${OUTPUT_DIR}/freedoom1.wad (Game data, ${WAD_SIZE})"
-echo ""
-echo "The game is ready to deploy!"
-echo ""
-echo "To test locally:"
-echo "  cd ${OUTPUT_DIR}"
-echo "  python3 -m http.server 8000"
-echo "  # Then open http://localhost:8000 in your browser"
-echo ""
-echo "To deploy to GitHub Pages:"
-echo "  git add ${OUTPUT_DIR}/"
-echo "  git commit -m 'Add DOOM game assets'"
-echo "  git push origin main"
-echo ""
-echo "The game uses js-dos to run DOOM directly in the browser."
-echo "No compilation or build tools are required!"
-echo ""
