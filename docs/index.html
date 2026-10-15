@@ -2,319 +2,1159 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Play DOOM Shareware v1.9 in your browser using js-dos emulator">
-    <title>DOOM - Play in Browser</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="description" content="Play DOOM in your browser powered by Chocolate Doom WebAssembly and Freedoom">
+    <title>DOOM in Browser (WASM + Freedoom)</title>
     <style>
+        :root {
+            --doom-red: #d31111;
+            --doom-bright-red: #ff2222;
+            --doom-dark-red: #4a0000;
+            --doom-border: #800000;
+            --doom-bg: #0d0404;
+            --doom-panel: rgba(20, 6, 6, 0.92);
+            --text-main: #f0f0f0;
+            --text-dim: #aaa;
+        }
+
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
         }
+
         body {
-            background: linear-gradient(to bottom, #0a0a0a 0%, #1a0000 100%);
-            color: #fff;
-            font-family: 'Courier New', monospace;
+            background: radial-gradient(circle at center, #1f0505 0%, var(--doom-bg) 100%);
+            color: var(--text-main);
+            font-family: 'Courier New', Courier, monospace;
+            min-height: 100vh;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            padding: 20px;
+            padding: 16px 12px 32px;
+            overflow-x: hidden;
         }
-        #header {
+
+        header {
             text-align: center;
-            margin-bottom: 30px;
+            margin-bottom: 16px;
         }
-        #header h1 {
-            font-size: 3em;
-            color: #ff0000;
-            text-shadow: 0 0 20px #ff0000, 0 0 40px #ff0000;
-            letter-spacing: 10px;
-            margin-bottom: 10px;
+
+        header h1 {
+            font-size: 2.8rem;
+            color: var(--doom-bright-red);
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9);
+            letter-spacing: 6px;
+            text-transform: uppercase;
         }
-        #header p {
-            color: #aaa;
-            font-size: 1.1em;
+
+        header p {
+            color: var(--text-dim);
+            font-size: 0.95rem;
+            margin-top: 4px;
         }
-        #game-container {
+
+        #game-wrapper {
             width: 100%;
             max-width: 900px;
-            aspect-ratio: 4/3;
-            border: 3px solid #a00;
-            box-shadow: 0 0 30px rgba(170, 0, 0, 0.5);
-            background: #000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        /* Top control bar */
+        #toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--doom-panel);
+            border: 1px solid var(--doom-border);
+            padding: 8px 14px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            gap: 10px;
+        }
+
+        .tool-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-toolbar {
+            background: #2a0808;
+            color: #fff;
+            border: 1px solid var(--doom-border);
+            padding: 6px 12px;
+            font-family: inherit;
+            font-size: 0.85rem;
+            cursor: pointer;
+            border-radius: 3px;
+            transition: all 0.2s;
+        }
+
+        .btn-toolbar:hover, .btn-toolbar:focus-visible {
+            background: var(--doom-red);
+            border-color: var(--doom-bright-red);
+            outline: none;
+        }
+
+        .volume-control {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .volume-control input[type="range"] {
+            accent-color: var(--doom-bright-red);
+            cursor: pointer;
+            width: 90px;
+        }
+
+        /* Game container with 4:3 aspect ratio */
+        #game-container {
             position: relative;
-            margin-bottom: 20px;
+            width: 100%;
+            aspect-ratio: 4 / 3;
+            background: #000;
+            border: 2px solid var(--doom-border);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.8);
+            border-radius: 4px;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
-        #jsdos {
+
+        #canvas {
             width: 100%;
             height: 100%;
+            display: block;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+            outline: none;
         }
-        #loading-screen {
+
+        /* Overlays */
+        .overlay {
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            inset: 0;
+            background: rgba(10, 2, 2, 0.94);
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            background: rgba(0, 0, 0, 0.95);
-            z-index: 1000;
-            transition: opacity 0.5s;
+            padding: 24px;
+            z-index: 100;
+            transition: opacity 0.3s ease;
         }
-        #loading-screen.hidden {
+
+        .overlay.hidden {
             opacity: 0;
             pointer-events: none;
         }
-        .loader {
-            border: 4px solid #333;
-            border-top: 4px solid #f00;
+
+        /* Start screen UI */
+        .start-box {
+            background: rgba(25, 6, 6, 0.95);
+            border: 2px solid var(--doom-border);
+            padding: 24px 30px;
+            border-radius: 6px;
+            max-width: 520px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.85);
+        }
+
+        .start-box h2 {
+            color: var(--doom-bright-red);
+            margin-bottom: 16px;
+            letter-spacing: 2px;
+            font-size: 1.5rem;
+        }
+
+        .game-select-group {
+            margin: 16px 0;
+            text-align: left;
+        }
+
+        .game-select-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 0.9rem;
+            color: var(--text-dim);
+        }
+
+        .game-select-group select {
+            width: 100%;
+            padding: 8px 10px;
+            background: #150303;
+            border: 1px solid var(--doom-border);
+            color: #fff;
+            font-family: inherit;
+            font-size: 0.95rem;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .game-select-group select:focus {
+            outline: none;
+            border-color: var(--doom-bright-red);
+        }
+
+        #upload-container {
+            margin-top: 10px;
+            display: none;
+            padding: 10px;
+            border: 1px dashed var(--doom-border);
+            border-radius: 4px;
+            background: rgba(10, 2, 2, 0.5);
+        }
+
+        #upload-container.visible {
+            display: block;
+        }
+
+        #custom-wad-file {
+            width: 100%;
+            font-family: inherit;
+            font-size: 0.85rem;
+            color: var(--text-dim);
+        }
+
+        .btn-start {
+            margin-top: 18px;
+            padding: 14px 40px;
+            font-size: 1.25rem;
+            font-weight: bold;
+            font-family: inherit;
+            background: #9e0c0c;
+            color: #ffffff;
+            border: 2px solid #e02020;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            border-radius: 4px;
+            transition: all 0.2s;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+            width: 100%;
+        }
+
+        .btn-start:hover:not(:disabled), .btn-start:focus-visible {
+            background: #b81212;
+            border-color: #ff4444;
+            color: #ffffff;
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.8);
+            transform: translateY(-1px);
+            outline: none;
+        }
+
+        .btn-start:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Loading progress UI */
+        .loader-spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid #300;
+            border-top: 4px solid #e02020;
             border-radius: 50%;
-            width: 60px;
-            height: 60px;
             animation: spin 1s linear infinite;
             margin-bottom: 20px;
         }
+
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
-        #status {
-            color: #0f0;
-            font-size: 1.1em;
-            margin: 10px 0;
-            text-align: center;
-            padding: 0 20px;
-            max-width: 80%;
-        }
-        #start-button {
-            margin-top: 20px;
-            padding: 15px 40px;
-            font-size: 1.2em;
-            font-family: 'Courier New', monospace;
-            background: #a00;
+
+        #status-text {
+            font-size: 1.1rem;
             color: #fff;
-            border: 2px solid #f00;
+            margin-bottom: 16px;
+            text-align: center;
+        }
+
+        .progress-box {
+            width: 80%;
+            max-width: 400px;
+            background: #110202;
+            border: 1px solid var(--doom-border);
+            height: 20px;
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        #progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--doom-red), var(--doom-bright-red));
+            transition: width 0.1s linear;
+        }
+
+        #progress-percent {
+            margin-top: 8px;
+            color: var(--text-dim);
+            font-size: 0.85rem;
+        }
+
+        /* Error box */
+        #error-overlay {
+            display: none;
+            z-index: 200;
+        }
+
+        #error-overlay.visible {
+            display: flex;
+        }
+
+        .error-box {
+            background: rgba(40, 4, 4, 0.98);
+            border: 2px solid var(--doom-bright-red);
+            padding: 24px 30px;
+            max-width: 550px;
+            border-radius: 6px;
+            text-align: center;
+        }
+
+        .error-box h3 {
+            color: var(--doom-bright-red);
+            margin-bottom: 12px;
+            font-size: 1.3rem;
+        }
+
+        .error-box p {
+            color: #eee;
+            font-size: 0.95rem;
+            line-height: 1.5;
+            margin-bottom: 16px;
+        }
+
+        /* Pause overlay */
+        #pause-overlay {
+            display: none;
             cursor: pointer;
-            text-transform: uppercase;
-            letter-spacing: 3px;
-            transition: all 0.3s;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 90;
+        }
+
+        #pause-overlay.visible {
+            display: flex;
+        }
+
+        #pause-overlay h2 {
+            font-size: 2.2rem;
+            color: var(--doom-bright-red);
+            letter-spacing: 5px;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9);
+            animation: pulse 1.5s infinite;
+        }
+
+        #pause-overlay p {
+            margin-top: 10px;
+            color: var(--text-dim);
+            font-size: 1rem;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Floating mouse capture hint */
+        #mouse-hint {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.75);
+            border: 1px solid var(--doom-border);
+            padding: 5px 12px;
+            border-radius: 14px;
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            pointer-events: none;
+            transition: opacity 0.5s;
+            opacity: 0;
+            z-index: 50;
+        }
+
+        #mouse-hint.active {
+            opacity: 1;
+        }
+
+        /* Mobile Touch Controls */
+        #mobile-controls {
             display: none;
-        }
-        #start-button:hover:not(:disabled) {
-            background: #f00;
-            box-shadow: 0 0 20px #f00;
-            transform: scale(1.05);
-        }
-        #start-button:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
-        #start-button.visible {
-            display: block;
-        }
-        #controls {
-            text-align: center;
-            color: #888;
-            font-size: 0.9em;
-            background: rgba(0, 0, 0, 0.7);
-            padding: 15px 30px;
-            border-radius: 5px;
-            border: 1px solid #a00;
+            width: 100%;
             max-width: 900px;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
+            margin-top: 6px;
+            background: rgba(15, 3, 3, 0.75);
+            border: 1px solid var(--doom-border);
+            border-radius: 6px;
+            padding: 10px;
         }
-        #controls h3 {
-            color: #f00;
-            margin-bottom: 10px;
+
+        #mobile-controls.touch-enabled {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
-        #controls p {
-            margin: 5px 0;
+
+        .touch-pad-left {
+            display: grid;
+            grid-template-columns: repeat(3, 50px);
+            grid-template-rows: repeat(3, 50px);
+            gap: 6px;
         }
-        #error-message {
-            color: #f00;
-            background: rgba(50, 0, 0, 0.8);
-            padding: 20px;
-            border: 2px solid #a00;
-            border-radius: 5px;
-            max-width: 600px;
-            text-align: center;
-            display: none;
+
+        .touch-pad-right {
+            display: grid;
+            grid-template-columns: repeat(3, 60px);
+            grid-template-rows: repeat(2, 50px);
+            gap: 6px;
+        }
+
+        .touch-btn {
+            background: rgba(60, 10, 10, 0.85);
+            border: 1px solid var(--doom-border);
+            color: #fff;
+            font-family: inherit;
+            font-size: 0.85rem;
+            font-weight: bold;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            touch-action: none;
+        }
+
+        .touch-btn:active, .touch-btn.active {
+            background: #b81212;
+            border-color: #ff4444;
+        }
+
+        .touch-btn.btn-fire {
+            background: rgba(140, 15, 15, 0.9);
+            border-color: var(--doom-bright-red);
+            font-size: 1rem;
+        }
+
+        /* Controls information box */
+        #controls-info {
+            background: var(--doom-panel);
+            border: 1px solid var(--doom-border);
+            border-radius: 4px;
+            padding: 14px 20px;
+            font-size: 0.85rem;
+            color: var(--text-dim);
             line-height: 1.6;
         }
-        #error-message.visible {
-            display: block;
+
+        #controls-info h3 {
+            color: var(--doom-bright-red);
+            margin-bottom: 8px;
+            font-size: 1rem;
+            letter-spacing: 1px;
         }
-        @media (max-width: 768px) {
-            #header h1 {
-                font-size: 2em;
-                letter-spacing: 5px;
+
+        .controls-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 8px 16px;
+        }
+
+        .controls-grid span strong {
+            color: #fff;
+        }
+
+        /* Footer */
+        footer {
+            margin-top: 24px;
+            text-align: center;
+            font-size: 0.8rem;
+            color: #777;
+            max-width: 800px;
+            line-height: 1.6;
+        }
+
+        footer a {
+            color: var(--doom-bright-red);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        footer a:hover, footer a:focus-visible {
+            color: #fff;
+            text-decoration: underline;
+        }
+
+        @media (max-width: 600px) {
+            header h1 {
+                font-size: 2rem;
+                letter-spacing: 4px;
             }
-            #controls {
-                font-size: 0.8em;
-                padding: 10px 15px;
+            .touch-pad-left {
+                grid-template-columns: repeat(3, 42px);
+                grid-template-rows: repeat(3, 42px);
+                gap: 4px;
+            }
+            .touch-pad-right {
+                grid-template-columns: repeat(3, 48px);
+                grid-template-rows: repeat(2, 42px);
+                gap: 4px;
+            }
+            .touch-btn {
+                font-size: 0.75rem;
+            }
+            #toolbar {
+                font-size: 0.75rem;
             }
         }
     </style>
 </head>
 <body>
-    <div id="header">
+    <header>
         <h1>DOOM</h1>
-        <p>Powered by js-dos | DOOM Shareware v1.9</p>
-    </div>
+        <p>WebAssembly Port | Chocolate Doom + Freedoom</p>
+    </header>
 
-    <div id="game-container">
-        <div id="jsdos"></div>
-        <div id="loading-screen">
-            <div class="loader"></div>
-            <div id="status">Initializing DOOM...</div>
-            <button id="start-button">Start Game</button>
-            <div id="error-message"></div>
+    <div id="game-wrapper">
+        <div id="toolbar">
+            <div class="tool-group">
+                <button id="btn-fullscreen" class="btn-toolbar" title="Toggle Fullscreen">⛶ Fullscreen</button>
+                <button id="btn-reset-saves" class="btn-toolbar" title="Delete Saved Games">↺ Reset Saves</button>
+            </div>
+            <div class="tool-group">
+                <div class="volume-control">
+                    <button id="btn-mute" class="btn-toolbar" title="Mute/Unmute Audio">🔊</button>
+                    <input type="range" id="volume-slider" min="0" max="1" step="0.05" value="0.8" title="Volume Slider">
+                </div>
+            </div>
+        </div>
+
+        <div id="game-container">
+            <canvas id="canvas" oncontextmenu="event.preventDefault()" tabindex="-1"></canvas>
+            <div id="mouse-hint">Click inside to capture mouse | ESC to release</div>
+
+            <!-- Start Game Overlay -->
+            <div id="start-overlay" class="overlay">
+                <div class="start-box">
+                    <h2>PLAY DOOM</h2>
+                    <div class="game-select-group">
+                        <label for="wad-selector">Choose Game / Episode:</label>
+                        <select id="wad-selector">
+                            <option value="freedoom1" selected>Freedoom: Phase 1 (Doom / Ultimate Doom Episodes)</option>
+                            <option value="freedoom2">Freedoom: Phase 2 (Doom II Compatible)</option>
+                            <option value="custom">Custom WAD File (Upload .wad)...</option>
+                        </select>
+                        <div id="upload-container">
+                            <input type="file" id="custom-wad-file" accept=".wad,.WAD">
+                            <p style="color:#aaa; font-size:0.75rem; margin-top:4px;">Processed 100% locally in your browser. Never uploaded.</p>
+                        </div>
+                    </div>
+                    <button id="btn-start" class="btn-start">START GAME</button>
+                </div>
+            </div>
+
+            <!-- Loading Progress Overlay -->
+            <div id="loading-overlay" class="overlay hidden">
+                <div class="loader-spinner"></div>
+                <div id="status-text">Preparing WebAssembly environment...</div>
+                <div class="progress-box">
+                    <div id="progress-bar"></div>
+                </div>
+                <div id="progress-percent">0%</div>
+            </div>
+
+            <!-- Pause Overlay -->
+            <div id="pause-overlay" class="overlay">
+                <h2>PAUSED</h2>
+                <p>Click anywhere or press any key to resume</p>
+            </div>
+
+            <!-- Error Overlay -->
+            <div id="error-overlay" class="overlay">
+                <div class="error-box">
+                    <h3>ERROR</h3>
+                    <p id="error-message">An unexpected error occurred.</p>
+                    <button class="btn-toolbar" onclick="location.reload()">Reload Page</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Touch Controls -->
+        <div id="mobile-controls">
+            <div class="touch-pad-left">
+                <div style="grid-column: 2; grid-row: 1;">
+                    <button class="touch-btn" data-key="ArrowUp" style="width:100%;height:100%;">▲</button>
+                </div>
+                <div style="grid-column: 1; grid-row: 2;">
+                    <button class="touch-btn" data-key="ArrowLeft" style="width:100%;height:100%;">◀</button>
+                </div>
+                <div style="grid-column: 2; grid-row: 2;">
+                    <button class="touch-btn" data-key="Space" style="width:100%;height:100%;">USE</button>
+                </div>
+                <div style="grid-column: 3; grid-row: 2;">
+                    <button class="touch-btn" data-key="ArrowRight" style="width:100%;height:100%;">▶</button>
+                </div>
+                <div style="grid-column: 2; grid-row: 3;">
+                    <button class="touch-btn" data-key="ArrowDown" style="width:100%;height:100%;">▼</button>
+                </div>
+            </div>
+            <div class="touch-pad-right">
+                <button class="touch-btn" data-key="Escape">ESC</button>
+                <button class="touch-btn" data-key="ShiftLeft">RUN</button>
+                <button class="touch-btn btn-fire" data-key="ControlLeft" style="grid-row: span 2;">FIRE</button>
+                <button class="touch-btn" data-key="Comma">ST-L</button>
+                <button class="touch-btn" data-key="Period">ST-R</button>
+            </div>
+        </div>
+
+        <!-- Controls Guide -->
+        <div id="controls-info">
+            <h3>GAME CONTROLS</h3>
+            <div class="controls-grid">
+                <span><strong>Move:</strong> W A S D or Arrow Keys</span>
+                <span><strong>Fire:</strong> Ctrl or Mouse Click</span>
+                <span><strong>Use / Open Doors:</strong> Space</span>
+                <span><strong>Strafe:</strong> Alt or , / .</span>
+                <span><strong>Run:</strong> Shift</span>
+                <span><strong>Weapons:</strong> Number Keys 1 - 7</span>
+                <span><strong>Automap:</strong> Tab</span>
+                <span><strong>Menu / Pause:</strong> ESC</span>
+            </div>
+            <p style="margin-top: 8px; font-size: 0.8rem; color: #888;">
+                Click inside the screen to lock the mouse for mouse look. Press ESC to release the cursor.
+            </p>
         </div>
     </div>
 
-    <div id="controls">
-        <h3>Controls</h3>
-        <p><strong>Arrow Keys:</strong> Move | <strong>Ctrl:</strong> Fire | <strong>Space:</strong> Use/Open Doors</p>
-        <p><strong>Alt:</strong> Strafe | <strong>Shift:</strong> Run | <strong>1-7:</strong> Select Weapon | <strong>ESC:</strong> Menu</p>
-        <p style="margin-top: 10px; color: #666; font-size: 0.85em;">Click inside the game to lock mouse. Press ESC to release.</p>
-    </div>
+    <footer>
+        <p>
+            Engine: <a href="https://github.com/cloudflare/doom-wasm" target="_blank" rel="noopener">Chocolate Doom WebAssembly</a>
+            (GPLv2, <a href="./CHOCOLATE-DOOM-LICENSE.txt">License</a>) |
+            Game Data: <a href="https://freedoom.github.io/" target="_blank" rel="noopener">Freedoom</a>
+            (BSD 3-Clause, <a href="./FREEDOOM-LICENSE.txt">License</a>)
+        </p>
+        <p style="margin-top: 4px;">
+            <a href="https://github.com/islamMendjel/project-DOOMbr" target="_blank" rel="noopener">Source Code & Documentation on GitHub</a> |
+            No commercial id Software assets are hosted or distributed by this repository.
+        </p>
+    </footer>
 
-    <!-- js-dos v6.22 library from unpkg CDN -->
-    <script src="https://unpkg.com/js-dos@6.22/dist/js-dos.js"></script>
-    
     <script>
-        const statusEl = document.getElementById('status');
-        const loadingScreen = document.getElementById('loading-screen');
-        const startButton = document.getElementById('start-button');
-        const errorMessage = document.getElementById('error-message');
+        (function() {
+            'use strict';
 
-        function setStatus(message) {
-            console.log('[Status]', message);
-            statusEl.textContent = message;
-        }
+            // UI Elements
+            const canvas = document.getElementById('canvas');
+            const startOverlay = document.getElementById('start-overlay');
+            const loadingOverlay = document.getElementById('loading-overlay');
+            const pauseOverlay = document.getElementById('pause-overlay');
+            const errorOverlay = document.getElementById('error-overlay');
+            const errorMessage = document.getElementById('error-message');
+            const statusText = document.getElementById('status-text');
+            const progressBar = document.getElementById('progress-bar');
+            const progressPercent = document.getElementById('progress-percent');
+            const wadSelector = document.getElementById('wad-selector');
+            const uploadContainer = document.getElementById('upload-container');
+            const customWadFileInput = document.getElementById('custom-wad-file');
+            const btnStart = document.getElementById('btn-start');
+            const btnFullscreen = document.getElementById('btn-fullscreen');
+            const btnMute = document.getElementById('btn-mute');
+            const volumeSlider = document.getElementById('volume-slider');
+            const btnResetSaves = document.getElementById('btn-reset-saves');
+            const mouseHint = document.getElementById('mouse-hint');
+            const mobileControls = document.getElementById('mobile-controls');
 
-        function showError(message) {
-            console.error('[Error]', message);
-            errorMessage.innerHTML = message;
-            errorMessage.classList.add('visible');
-            document.querySelector('.loader').style.display = 'none';
-        }
+            let isGameRunning = false;
+            let loadedWadData = null;
+            let loadedWadName = '';
+            let isCustomWadPWAD = false;
 
-        function hideLoading() {
-            setTimeout(() => {
-                loadingScreen.classList.add('hidden');
-            }, 1500);
-        }
+            // Audio volume & mute management
+            let masterGain = null;
+            let masterVolume = 0.8;
+            let isMuted = false;
 
-        // Helper: fetch with timeout
-        async function fetchWithTimeout(url, timeoutMs = 30000) {
-            const controller = new AbortController();
-            const id = setTimeout(() => controller.abort(), timeoutMs);
-            try {
-                const resp = await fetch(url, { signal: controller.signal });
-                clearTimeout(id);
-                if (!resp.ok) {
-                    throw new Error(`Network error: ${resp.status} ${resp.statusText}`);
-                }
-                return resp.arrayBuffer();
-            } catch (err) {
-                clearTimeout(id);
-                if (err.name === 'AbortError') {
-                    throw new Error(`Request timeout after ${timeoutMs / 1000}s`);
-                }
-                throw err;
-            }
-        }
-
-        // Initialize js-dos v6.22
-        setStatus('Loading DOOM emulator...');
-
-        // Check if js-dos loaded
-        window.addEventListener('load', function() {
-            if (typeof Dos === 'undefined') {
-                showError('Failed to load js-dos library. Please check your internet connection and refresh the page.');
-            } else {
-                setStatus('Emulator loaded. Click "Start Game" to begin!');
-                startButton.classList.add('visible');
-                document.querySelector('.loader').style.display = 'none';
-
-                startButton.onclick = async () => {
-                    try {
-                        startButton.disabled = true;
-                        startButton.textContent = 'Loading...';
-                        document.querySelector('.loader').style.display = 'block';
-                        
-                        setStatus('Initializing DOS environment...');
-
-                        const root = document.getElementById('jsdos');
-                        
-                        // Prefer local bundle (same-origin), fallback to remote if local not available
-                        const localBundle = './doom.jsdos';
-                        const remoteBundle = 'https://cdn.dos.zone/custom/dos/doom.jsdos';
-                        
-                        setStatus('Downloading DOOM Shareware bundle (may take 30-60 seconds)...');
-
-                        // Initialize js-dos with the bundle
-                        Dos(root, {
-                            wdosboxUrl: "https://unpkg.com/js-dos@6.22/dist/wdosbox.js",
-                        }).ready(async (fs, main) => {
-                            try {
-                                async function loadAndExtract(url, timeoutMs) {
-                                    setStatus(`Fetching bundle: ${url}`);
-                                    const ab = await fetchWithTimeout(url, timeoutMs);
-                                    setStatus('Extracting bundle into emulator...');
-                                    await fs.extract(new Uint8Array(ab));
-                                }
-
-                                // Try local first (shorter timeout), then remote
-                                try {
-                                    setStatus('Attempting to load local bundle (./doom.jsdos)...');
-                                    await loadAndExtract(localBundle, 15000);
-                                } catch (localErr) {
-                                    console.warn('Local bundle failed:', localErr);
-                                    setStatus('Local bundle not available or failed — trying remote CDN...');
-                                    await loadAndExtract(remoteBundle, 30000);
-                                }
-
-                                setStatus('Starting DOOM Shareware...');
-                                await main(["-c", "DOOM.EXE"]);
-                                setStatus('DOOM is running! Click inside to play.');
-                                hideLoading();
-                            } catch (err) {
-                                console.error('Bundle load/extract error:', err);
-                                throw err;
-                            }
-                        });
-                        
-                    } catch (error) {
-                        console.error('Error starting game:', error);
-                        showError(
-                            `<strong>Unable to start DOOM</strong><br><br>` +
-                            `Error: ${error.message || error}<br><br>` +
-                            `<span style="color: #aaa; font-size: 0.9em;">` +
-                            `Possible causes:<br>` +
-                            `• The local bundle (./doom.jsdos) is missing or unreadable<br>` +
-                            `• The remote CDN is unreachable or blocked by CORS<br>` +
-                            `• Network connectivity issues or request timeout<br><br>` +
-                            `Try refreshing the page. If the problem persists, check if doom.jsdos is present in the docs/ directory.` +
-                            `</span>`
-                        );
-                        startButton.disabled = false;
-                        startButton.textContent = 'Try Again';
+            // Intercept AudioNode.connect to route through masterGain
+            const originalAudioNodeConnect = AudioNode.prototype.connect;
+            AudioNode.prototype.connect = function(target, ...args) {
+                if (target instanceof AudioDestinationNode) {
+                    if (!masterGain) {
+                        try {
+                            masterGain = target.context.createGain();
+                            originalAudioNodeConnect.call(masterGain, target);
+                            masterGain.gain.setValueAtTime(isMuted ? 0 : masterVolume, target.context.currentTime);
+                        } catch(e) {
+                            console.warn('[Audio] Failed to attach master gain:', e);
+                        }
                     }
+                    if (masterGain) {
+                        return originalAudioNodeConnect.call(this, masterGain, ...args);
+                    }
+                }
+                return originalAudioNodeConnect.call(this, target, ...args);
+            };
+
+            volumeSlider.addEventListener('input', (e) => {
+                masterVolume = parseFloat(e.target.value);
+                if (masterGain && !isMuted) {
+                    masterGain.gain.setValueAtTime(masterVolume, masterGain.context.currentTime);
+                }
+                btnMute.textContent = masterVolume === 0 || isMuted ? '🔇' : '🔊';
+            });
+
+            btnMute.addEventListener('click', () => {
+                isMuted = !isMuted;
+                btnMute.textContent = isMuted ? '🔇' : (masterVolume === 0 ? '🔇' : '🔊');
+                if (masterGain) {
+                    masterGain.gain.setValueAtTime(isMuted ? 0 : masterVolume, masterGain.context.currentTime);
+                }
+            });
+
+            // Fullscreen
+            btnFullscreen.addEventListener('click', () => {
+                const container = document.getElementById('game-container');
+                if (!document.fullscreenElement) {
+                    if (container.requestFullscreen) container.requestFullscreen();
+                    else if (container.webkitRequestFullscreen) container.webkitRequestFullscreen();
+                } else {
+                    if (document.exitFullscreen) document.exitFullscreen();
+                }
+            });
+
+            // Pointer lock handling
+            canvas.addEventListener('click', () => {
+                if (isGameRunning && document.pointerLockElement !== canvas) {
+                    canvas.requestPointerLock();
+                }
+            });
+
+            document.addEventListener('pointerlockchange', () => {
+                if (document.pointerLockElement === canvas) {
+                    mouseHint.classList.add('active');
+                    setTimeout(() => mouseHint.classList.remove('active'), 2500);
+                } else {
+                    mouseHint.classList.remove('active');
+                }
+            });
+
+            // Prevent browser key stealing while game is active
+            window.addEventListener('keydown', (e) => {
+                if (!isGameRunning) return;
+                const blockedKeys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space', 'Tab', 'AltLeft', 'AltRight', 'ControlLeft', 'ControlRight'];
+                if (blockedKeys.includes(e.code) || e.key === 'Tab') {
+                    e.preventDefault();
+                }
+            }, { passive: false });
+
+            // Pause overlay on blur / visibility change
+            window.addEventListener('blur', () => {
+                if (isGameRunning) pauseOverlay.classList.add('visible');
+            });
+
+            document.addEventListener('visibilitychange', () => {
+                if (document.hidden && isGameRunning) {
+                    pauseOverlay.classList.add('visible');
+                }
+            });
+
+            pauseOverlay.addEventListener('click', () => {
+                pauseOverlay.classList.remove('visible');
+                canvas.focus();
+            });
+
+            window.addEventListener('focus', () => {
+                // Keep overlay until user explicitly clicks or resumes
+            });
+
+            // Detect touch device
+            const isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+            if (isTouch) {
+                mobileControls.classList.add('touch-enabled');
+                setupTouchControls();
+            }
+
+            function setupTouchControls() {
+                const buttons = mobileControls.querySelectorAll('.touch-btn');
+                buttons.forEach(btn => {
+                    const key = btn.getAttribute('data-key');
+                    const code = key.length === 1 ? 'Key' + key.toUpperCase() : key;
+
+                    function handleDown(e) {
+                        e.preventDefault();
+                        btn.classList.add('active');
+                        const evt = new KeyboardEvent('keydown', { key: key, code: code, bubbles: true });
+                        window.dispatchEvent(evt);
+                        canvas.dispatchEvent(evt);
+                    }
+
+                    function handleUp(e) {
+                        e.preventDefault();
+                        btn.classList.remove('active');
+                        const evt = new KeyboardEvent('keyup', { key: key, code: code, bubbles: true });
+                        window.dispatchEvent(evt);
+                        canvas.dispatchEvent(evt);
+                    }
+
+                    btn.addEventListener('touchstart', handleDown, { passive: false });
+                    btn.addEventListener('touchend', handleUp, { passive: false });
+                    btn.addEventListener('touchcancel', handleUp, { passive: false });
+                });
+            }
+
+            // IndexedDB Saves persistence
+            const IDB_NAME = 'DOOM_SAVES_DB';
+            const IDB_STORE = 'saves';
+
+            function openSavesDB() {
+                return new Promise((resolve, reject) => {
+                    const req = indexedDB.open(IDB_NAME, 1);
+                    req.onupgradeneeded = (e) => {
+                        const db = e.target.result;
+                        if (!db.objectStoreNames.contains(IDB_STORE)) {
+                            db.createObjectStore(IDB_STORE);
+                        }
+                    };
+                    req.onsuccess = () => resolve(req.result);
+                    req.onerror = () => reject(req.error);
+                });
+            }
+
+            async function restoreSavesFromIDB(FS) {
+                try {
+                    const db = await openSavesDB();
+                    return new Promise((resolve) => {
+                        const tx = db.transaction(IDB_STORE, 'readonly');
+                        const store = tx.objectStore(IDB_STORE);
+                        const req = store.openCursor();
+                        req.onsuccess = (e) => {
+                            const cursor = e.target.result;
+                            if (cursor) {
+                                const filePath = cursor.key;
+                                const fileData = cursor.value;
+                                try {
+                                    const parts = filePath.split('/');
+                                    let dir = '';
+                                    for (let i = 1; i < parts.length - 1; i++) {
+                                        dir += '/' + parts[i];
+                                        try { FS.mkdir(dir); } catch(_) {}
+                                    }
+                                    FS.writeFile(filePath, fileData);
+                                    console.log('[Saves] Restored:', filePath);
+                                } catch(err) {
+                                    console.warn('[Saves] Restore error for', filePath, err);
+                                }
+                                cursor.continue();
+                            } else {
+                                resolve();
+                            }
+                        };
+                        req.onerror = () => resolve();
+                    });
+                } catch(err) {
+                    console.warn('[Saves] IndexedDB open error:', err);
+                }
+            }
+
+            async function syncSavesToIDB(FS) {
+                if (!FS) return;
+                try {
+                    const saveDir = '/libsdl/doom-ws-wasm/savegames';
+                    let files = [];
+                    try {
+                        files = FS.readdir(saveDir).filter(f => f !== '.' && f !== '..');
+                    } catch(_) {}
+
+                    const db = await openSavesDB();
+                    const tx = db.transaction(IDB_STORE, 'readwrite');
+                    const store = tx.objectStore(IDB_STORE);
+
+                    for (const f of files) {
+                        const p = saveDir + '/' + f;
+                        try {
+                            const data = FS.readFile(p);
+                            store.put(data, p);
+                        } catch(_) {}
+                    }
+
+                    try {
+                        const cfg = FS.readFile('default.cfg');
+                        store.put(cfg, 'default.cfg');
+                    } catch(_) {}
+                } catch(err) {
+                    console.warn('[Saves] Sync error:', err);
+                }
+            }
+
+            btnResetSaves.addEventListener('click', async () => {
+                if (!confirm('Are you sure you want to delete all saved games? This cannot be undone.')) return;
+                try {
+                    const db = await openSavesDB();
+                    const tx = db.transaction(IDB_STORE, 'readwrite');
+                    tx.objectStore(IDB_STORE).clear();
+                    if (window.Module && window.Module.FS) {
+                        const FS = window.Module.FS;
+                        const saveDir = '/libsdl/doom-ws-wasm/savegames';
+                        try {
+                            const files = FS.readdir(saveDir).filter(f => f !== '.' && f !== '..');
+                            for (const f of files) {
+                                try { FS.unlink(saveDir + '/' + f); } catch(_) {}
+                            }
+                        } catch(_) {}
+                    }
+                    alert('All saved games have been reset.');
+                } catch(err) {
+                    alert('Error resetting saves: ' + err.message);
+                }
+            });
+
+            // WAD Selector handling
+            wadSelector.addEventListener('change', () => {
+                if (wadSelector.value === 'custom') {
+                    uploadContainer.classList.add('visible');
+                    btnStart.disabled = !customWadFileInput.files.length;
+                } else {
+                    uploadContainer.classList.remove('visible');
+                    btnStart.disabled = false;
+                }
+            });
+
+            customWadFileInput.addEventListener('change', () => {
+                btnStart.disabled = !customWadFileInput.files.length;
+            });
+
+            // Error display helper
+            function showError(msg) {
+                console.error('[DOOM Error]', msg);
+                loadingOverlay.classList.add('hidden');
+                errorMessage.textContent = msg;
+                errorOverlay.classList.add('visible');
+            }
+
+            // Magic bytes verification
+            function verifyWadMagic(buffer) {
+                if (!buffer || buffer.byteLength < 4) return { valid: false, error: 'File is too small to be a valid WAD.' };
+                const bytes = new Uint8Array(buffer, 0, 4);
+                const magic = String.fromCharCode(...bytes);
+                if (magic === 'IWAD') {
+                    return { valid: true, type: 'IWAD' };
+                } else if (magic === 'PWAD') {
+                    return { valid: true, type: 'PWAD' };
+                }
+                return {
+                    valid: false,
+                    error: `Invalid WAD format: header magic is "${magic}" (expected IWAD or PWAD).`
                 };
             }
-        });
-    </script>
 
-    <noscript>
-        <div style="color: #f00; text-align: center; padding: 50px;">
-            <h2>JavaScript Required</h2>
-            <p>Please enable JavaScript to play DOOM in your browser.</p>
-        </div>
-    </noscript>
+            // Fetch with progress bar
+            async function fetchWadWithProgress(url, label) {
+                statusText.textContent = `Downloading ${label}...`;
+                progressBar.style.width = '0%';
+                progressPercent.textContent = '0%';
+
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error(`Failed to download ${label} (${response.status} ${response.statusText}). If running locally, please run ./build.sh.`);
+                }
+
+                const contentLength = response.headers.get('content-length');
+                const total = contentLength ? parseInt(contentLength, 10) : 0;
+
+                if (!response.body) {
+                    const ab = await response.arrayBuffer();
+                    progressBar.style.width = '100%';
+                    progressPercent.textContent = '100%';
+                    return ab;
+                }
+
+                const reader = response.body.getReader();
+                let received = 0;
+                const chunks = [];
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    chunks.push(value);
+                    received += value.length;
+
+                    if (total > 0) {
+                        const pct = Math.min(100, Math.round((received / total) * 100));
+                        progressBar.style.width = `${pct}%`;
+                        const mbReceived = (received / (1024 * 1024)).toFixed(1);
+                        const mbTotal = (total / (1024 * 1024)).toFixed(1);
+                        progressPercent.textContent = `${pct}% (${mbReceived} MB / ${mbTotal} MB)`;
+                    } else {
+                        const mbReceived = (received / (1024 * 1024)).toFixed(1);
+                        progressPercent.textContent = `${mbReceived} MB loaded`;
+                    }
+                }
+
+                const allChunks = new Uint8Array(received);
+                let position = 0;
+                for (const chunk of chunks) {
+                    allChunks.set(chunk, position);
+                    position += chunk.length;
+                }
+                return allChunks.buffer;
+            }
+
+            let defaultCfgContent = '';
+
+            // Start Game click handler
+            btnStart.addEventListener('click', async () => {
+                // 1. Verify WebAssembly support
+                if (typeof WebAssembly !== 'object' || !WebAssembly.instantiate) {
+                    showError('WebAssembly is not supported by your browser. Please use a modern browser.');
+                    return;
+                }
+
+                startOverlay.classList.add('hidden');
+                loadingOverlay.classList.remove('hidden');
+
+                const selection = wadSelector.value;
+                try {
+                    statusText.textContent = 'Loading engine configuration...';
+                    try {
+                        const cfgResp = await fetch('./engine/default.cfg');
+                        if (cfgResp.ok) {
+                            defaultCfgContent = await cfgResp.text();
+                        }
+                    } catch(e) {
+                        console.warn('Could not preload default.cfg:', e);
+                    }
+
+                    if (selection === 'freedoom1') {
+                        loadedWadName = 'freedoom1.wad';
+                        isCustomWadPWAD = false;
+                        loadedWadData = await fetchWadWithProgress('./wads/freedoom1.wad', 'Freedoom: Phase 1');
+                    } else if (selection === 'freedoom2') {
+                        loadedWadName = 'freedoom2.wad';
+                        isCustomWadPWAD = false;
+                        loadedWadData = await fetchWadWithProgress('./wads/freedoom2.wad', 'Freedoom: Phase 2');
+                    } else if (selection === 'custom') {
+                        const file = customWadFileInput.files[0];
+                        if (!file) throw new Error('No custom WAD file selected.');
+                        statusText.textContent = `Reading ${file.name}...`;
+                        loadedWadName = file.name;
+                        loadedWadData = await file.arrayBuffer();
+                    }
+
+                    // 2. Validate WAD magic
+                    const magicCheck = verifyWadMagic(loadedWadData);
+                    if (!magicCheck.valid) {
+                        showError(magicCheck.error);
+                        return;
+                    }
+                    if (magicCheck.type === 'PWAD') {
+                        isCustomWadPWAD = true;
+                    }
+
+                    statusText.textContent = 'Initializing Chocolate Doom engine...';
+                    progressBar.style.width = '100%';
+                    progressPercent.textContent = 'Launching...';
+
+                    // 3. Launch Chocolate Doom WebAssembly
+                    launchDoomEngine();
+
+                } catch (err) {
+                    showError(err.message || 'Failed to load game assets.');
+                }
+            });
+
+            // Engine launch
+            function launchDoomEngine() {
+                window.Module = {
+                    canvas: canvas,
+                    noInitialRun: true,
+                    locateFile: function(path) {
+                        if (path.endsWith('.wasm')) return './engine/chocolate-doom.wasm';
+                        return './engine/' + path;
+                    },
+                    preRun: function() {
+                        const FS = window.Module.FS;
+                        // Preload selected WAD into virtual root
+                        FS.createDataFile('/', loadedWadName, new Uint8Array(loadedWadData), true, true, true);
+
+                        // If default.cfg is preloaded, write it synchronously
+                        if (defaultCfgContent) {
+                            try {
+                                FS.createDataFile('/', 'default.cfg', defaultCfgContent, true, true, true);
+                            } catch(e) {
+                                console.warn('FS default.cfg write:', e);
+                            }
+                        }
+
+                        // Ensure save directory exists and restore from IDB
+                        try {
+                            FS.mkdir('/libsdl');
+                            FS.mkdir('/libsdl/doom-ws-wasm');
+                            FS.mkdir('/libsdl/doom-ws-wasm/savegames');
+                        } catch(_) {}
+                        restoreSavesFromIDB(FS);
+                    },
+                    onRuntimeInitialized: async function() {
+                        console.log('[DOOM Engine] Runtime initialized');
+                        const FS = window.Module.FS;
+                        await restoreSavesFromIDB(FS);
+
+                        // Build argv arguments
+                        let args = ["-iwad", loadedWadName, "-window", "-nogui", "-nomusic", "-config", "default.cfg"];
+
+                        try {
+                            callMain(args);
+                            isGameRunning = true;
+                            window.__DOOM_RUNNING__ = true;
+                            loadingOverlay.classList.add('hidden');
+                            canvas.focus();
+
+                            // Start periodic savegame sync
+                            setInterval(() => {
+                                if (isGameRunning) syncSavesToIDB(FS);
+                            }, 4000);
+
+                            window.addEventListener('beforeunload', () => syncSavesToIDB(FS));
+                            document.addEventListener('visibilitychange', () => {
+                                if (document.hidden) syncSavesToIDB(FS);
+                            });
+
+                        } catch(e) {
+                            showError('Error starting DOOM: ' + (e.message || e));
+                        }
+                    },
+                    print: function(text) {
+                        console.log('[DOOM STDOUT]', text);
+                    },
+                    printErr: function(text) {
+                        if (typeof text === 'string' && (text.includes('warning') || text.includes('WARNING') || text.includes('info'))) {
+                            console.warn('[DOOM STDERR]', text);
+                        } else {
+                            console.error('[DOOM STDERR]', text);
+                        }
+                    }
+                };
+
+                // Load engine script
+                const script = document.createElement('script');
+                script.src = './engine/chocolate-doom.js';
+                script.onerror = () => showError('Failed to load engine script (./engine/chocolate-doom.js).');
+                document.body.appendChild(script);
+            }
+
+        })();
+    </script>
 </body>
 </html>
