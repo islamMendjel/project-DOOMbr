@@ -23,37 +23,15 @@ Desktop.ini
 *.log
 /tmp/
 
-# Node Modules (if using Node.js tools)
+# Node Modules (Playwright local test tools)
 node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
+package-lock.json
 
-# Python Cache (if using Python server)
-__pycache__/
-*.py[cod]
-*$py.class
-
-# Build artifacts
-dist/
-build/
-*.o
-*.a
-
-# Large binary files that might be added later
-*.wasm.map
-*.data.map
-
-# Emscripten build artifacts
-# Note: docs/ directory is intentionally NOT ignored as it contains
-# deployment artifacts for GitHub Pages
-*.bc
-*.out
-
-# WAD files (game data - not included due to licensing)
-# Uncomment if you want to exclude WADs from the repository:
-# *.wad
-# data/*.wad
+# Large game data files (downloaded at build time via build.sh)
+*.wad
+docs/*.wad
+docs/wads/*.wad
+*.zip
 
 # Emscripten SDK cache (if building locally)
 emsdk/
