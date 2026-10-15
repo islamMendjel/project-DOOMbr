@@ -1,100 +1,55 @@
 name: Build and Deploy DOOM to GitHub Pages
 
-# This workflow downloads DOOM game assets and deploys them to GitHub Pages.
-# The game uses js-dos to run DOOM directly in the browser - no compilation needed!
-#
-# Triggers:
-#   - Push to main branch
-#   - Manual workflow dispatch (via GitHub Actions UI)
-
 on:
   push:
     branches:
       - main
-  workflow_dispatch:  # Allow manual triggering
+  workflow_dispatch:
 
-# Required for GitHub Pages deployment
 permissions:
-  contents: write
+  contents: read
   pages: write
   id-token: write
 
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
 jobs:
   build-and-deploy:
-    name: Download DOOM Assets and Deploy
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
-    
     steps:
-      # Step 1: Check out the repository
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0  # Full history for better git operations
-      
-      # Step 2: Download Freedoom WAD file
-      # This script downloads the free Freedoom game data
-      - name: Download game assets
+
+      - name: Setup GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Download and verify Freedoom game assets
         run: |
           chmod +x ./build.sh
           ./build.sh
-        continue-on-error: false
-      
-      # Step 3: Download DOOM .jsdos bundle
-      # This downloads the js-dos bundle to docs/ for local same-origin loading
-      - name: Download DOOM .jsdos bundle
+
+      - name: Verify build outputs
         run: |
-          # ensure docs folder exists
-          mkdir -p docs
-          curl -L -o docs/doom.jsdos "https://cdn.dos.zone/custom/dos/doom.jsdos"
-      
-      # Step 4: List generated files for verification
-      - name: Verify build output
-        run: |
-          echo "Build artifacts:"
-          ls -lh docs/
-          echo ""
-          echo "Checking for required files..."
-          test -f docs/index.html && echo "✓ index.html exists" || echo "✗ index.html missing"
-          test -f docs/freedoom1.wad && echo "✓ freedoom1.wad exists" || echo "✗ freedoom1.wad missing"
-          test -f docs/doom.jsdos && echo "✓ doom.jsdos exists" || echo "✗ doom.jsdos missing"
-          echo ""
-          if [ -f docs/freedoom1.wad ]; then
-            WAD_SIZE=$(du -h docs/freedoom1.wad | cut -f1)
-            echo "WAD file size: ${WAD_SIZE}"
-          fi
-          if [ -f docs/doom.jsdos ]; then
-            JSDOS_SIZE=$(du -h docs/doom.jsdos | cut -f1)
-            echo "JSDOS bundle size: ${JSDOS_SIZE}"
-          fi
-      
-      # Step 5: Deploy to GitHub Pages
-      # Uses the peaceiris/actions-gh-pages action with GITHUB_TOKEN
-      # This pushes the docs/ directory to the gh-pages branch
-      - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v4
+          echo "Verifying site structure in docs/..."
+          test -f docs/index.html && echo "✓ index.html found"
+          test -f docs/engine/chocolate-doom.js && echo "✓ chocolate-doom.js found"
+          test -f docs/engine/chocolate-doom.wasm && echo "✓ chocolate-doom.wasm found"
+          test -f docs/engine/default.cfg && echo "✓ default.cfg found"
+          test -f docs/wads/freedoom1.wad && echo "✓ freedoom1.wad found"
+          test -f docs/wads/freedoom2.wad && echo "✓ freedoom2.wad found"
+          echo "Docs folder listing:"
+          ls -lh docs/ docs/engine/ docs/wads/
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./docs
-          publish_branch: gh-pages
-          force_orphan: true  # Keep gh-pages branch clean
-          user_name: 'github-actions[bot]'
-          user_email: 'github-actions[bot]@users.noreply.github.com'
-          commit_message: 'Deploy DOOM to GitHub Pages'
-      
-      # Step 6: Output deployment URL
-      - name: Output deployment info
-        run: |
-          echo "========================================="
-          echo "Deployment complete!"
-          echo "========================================="
-          echo ""
-          echo "Your DOOM browser game has been deployed to GitHub Pages."
-          echo ""
-          echo "Repository: ${{ github.repository }}"
-          echo "Deployment URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/"
-          echo ""
-          echo "Note: It may take a few minutes for GitHub Pages to update."
-          echo "      Check the Pages settings if the site doesn't appear."
-          echo ""
-          echo "The game uses js-dos to run DOOM directly in your browser!"
-          echo ""
+          path: ./docs
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
