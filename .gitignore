@@ -41,3 +41,4 @@ emsdk-cache/
 .env
 .env.local
 .env.*.local
+doom-*screenshot.png
