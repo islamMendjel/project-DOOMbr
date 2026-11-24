@@ -783,33 +783,117 @@
                 setupTouchControls();
             }
 
-            function setupTouchControls() {
-                const buttons = mobileControls.querySelectorAll('.touch-btn');
-                buttons.forEach(btn => {
-                    const key = btn.getAttribute('data-key');
-                    const code = key.length === 1 ? 'Key' + key.toUpperCase() : key;
+            
+function setupTouchControls() {
+    const buttons = mobileControls.querySelectorAll('.touch-btn');
 
-                    function handleDown(e) {
-                        e.preventDefault();
-                        btn.classList.add('active');
-                        const evt = new KeyboardEvent('keydown', { key: key, code: code, bubbles: true });
-                        window.dispatchEvent(evt);
-                        canvas.dispatchEvent(evt);
-                    }
+    const keyMap = {
+        ArrowUp:     { key: 'ArrowUp', code: 'ArrowUp', keyCode: 38 },
+        ArrowDown:   { key: 'ArrowDown', code: 'ArrowDown', keyCode: 40 },
+        ArrowLeft:   { key: 'ArrowLeft', code: 'ArrowLeft', keyCode: 37 },
+        ArrowRight:  { key: 'ArrowRight', code: 'ArrowRight', keyCode: 39 },
+        Space:       { key: ' ', code: 'Space', keyCode: 32 },
+        Escape:      { key: 'Escape', code: 'Escape', keyCode: 27 },
+        ShiftLeft:   { key: 'Shift', code: 'ShiftLeft', keyCode: 16 },
+        ControlLeft: { key: 'Control', code: 'ControlLeft', keyCode: 17 },
+        Comma:       { key: ',', code: 'Comma', keyCode: 188 },
+        Period:      { key: '.', code: 'Period', keyCode: 190 }
+    };
 
-                    function handleUp(e) {
-                        e.preventDefault();
-                        btn.classList.remove('active');
-                        const evt = new KeyboardEvent('keyup', { key: key, code: code, bubbles: true });
-                        window.dispatchEvent(evt);
-                        canvas.dispatchEvent(evt);
-                    }
+    const pressedButtons = new Set();
 
-                    btn.addEventListener('touchstart', handleDown, { passive: false });
-                    btn.addEventListener('touchend', handleUp, { passive: false });
-                    btn.addEventListener('touchcancel', handleUp, { passive: false });
-                });
-            }
+    function sendKey(type, info) {
+        const event = new KeyboardEvent(type, {
+            key: info.key,
+            code: info.code,
+            bubbles: true,
+            cancelable: true
+        });
+
+        try {
+            Object.defineProperty(event, 'keyCode', {
+                get: () => info.keyCode
+            });
+            Object.defineProperty(event, 'which', {
+                get: () => info.keyCode
+            });
+        } catch (error) {}
+
+        // Um único evento: ele sobe do canvas até document e window.
+        canvas.dispatchEvent(event);
+    }
+
+    function releaseButton(button) {
+        if (!pressedButtons.has(button)) return;
+
+        pressedButtons.delete(button);
+        button.classList.remove('active');
+
+        const info = keyMap[button.dataset.key];
+
+        if (info) {
+            sendKey('keyup', info);
+        }
+    }
+
+    buttons.forEach(button => {
+        const info = keyMap[button.dataset.key];
+
+        if (!info) return;
+
+        button.style.touchAction = 'none';
+
+        button.addEventListener('pointerdown', event => {
+            event.preventDefault();
+
+            if (pressedButtons.has(button)) return;
+
+            pressedButtons.add(button);
+            button.classList.add('active');
+
+            canvas.focus();
+
+            try {
+                button.setPointerCapture(event.pointerId);
+            } catch (error) {}
+
+            sendKey('keydown', info);
+        });
+
+        button.addEventListener('pointerup', event => {
+            event.preventDefault();
+            releaseButton(button);
+        });
+
+        button.addEventListener('pointercancel', event => {
+            event.preventDefault();
+            releaseButton(button);
+        });
+
+        button.addEventListener('lostpointercapture', () => {
+            releaseButton(button);
+        });
+
+        button.addEventListener('contextmenu', event => {
+            event.preventDefault();
+        });
+    });
+
+    function releaseAllButtons() {
+        buttons.forEach(releaseButton);
+    }
+
+    window.addEventListener('blur', releaseAllButtons);
+
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+            releaseAllButtons();
+        }
+    });
+
+    console.log('[DOOM] Controles móveis inicializados.');
+}
+            
 
             // IndexedDB Saves persistence
             const IDB_NAME = 'DOOM_SAVES_DB';
